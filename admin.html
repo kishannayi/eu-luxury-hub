@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000">
+<meta name="robots" content="noindex,nofollow">
+<title>EU Luxury Hub — Admin Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#000;--surf:#0c0c0c;--surf-2:#141414;--border:#1a1a1a;--border-2:#262626;--t1:#fff;--t2:#c4c4c4;--t3:#7a7a7a;--t4:#4a4a4a;--acid:#d6ff00;--acid-2:#b8e600;--acid-glow:rgba(214,255,0,.6);--acid-soft:rgba(214,255,0,.08);--red:#ff2a2a;--green:#00d97a;--ease:cubic-bezier(.22,.61,.36,1);--ease-out:cubic-bezier(.16,1,.3,1)}
+*{margin:0;padding:0;box-sizing:border-box}
+*::selection{background:var(--acid);color:#000}
+html,body{background:#000;height:100%}
+body{font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.5;color:#fff;-webkit-font-smoothing:antialiased;overflow:hidden}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit}
+img,svg{display:block;max-width:100%}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:#000}
+*::-webkit-scrollbar-thumb{background:var(--border-2);border:2px solid #000}
+*::-webkit-scrollbar-thumb:hover{background:var(--acid)}
+
+/* SELECTS — fix Linux/Chrome white dropdowns */
+select,select option,.statussel,.statussel option{background-color:#0a0a0a!important;color:#fff!important;color-scheme:dark}
+select:focus,.statussel:focus{outline:1px solid var(--acid);outline-offset:-1px}
+
+/* FORM */
+.fld{margin-bottom:14px;position:relative}
+.fld label{position:absolute;top:-7px;left:14px;font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);background:#000;padding:0 7px;z-index:1;font-weight:500}
+.fld input{width:100%;padding:16px;background:#0a0a0a;border:1px solid var(--border);color:#fff;font-family:'Space Grotesk';font-size:14px;transition:.25s}
+.fld input:focus{outline:none;border-color:var(--acid);background:#0d0d0d}
+.fld input::placeholder{color:var(--t4)}
+.fld2{margin-bottom:0;position:relative}
+.fld2 label{display:block;font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);margin-bottom:9px;font-weight:600}
+.fld2 input,.fld2 textarea,.fld2 select{width:100%;padding:13px 15px;border:1px solid var(--border-2);background:#0a0a0a;font-family:'Space Grotesk';font-size:13.5px;color:#fff;transition:.25s}
+.fld2 input:focus,.fld2 textarea:focus,.fld2 select:focus{outline:none;border-color:var(--acid)}
+.fld2 textarea{resize:vertical;min-height:58px}
+
+/* BUTTONS */
+.btn-acid{display:inline-flex;align-items:center;justify-content:center;gap:14px;padding:18px 30px;background:var(--acid);color:#000;font-family:'JetBrains Mono';font-weight:700;font-size:11px;letter-spacing:3px;text-transform:uppercase;position:relative;overflow:hidden;transition:.45s var(--ease);width:100%;border:1px solid var(--acid)}
+.btn-acid::before{content:"";position:absolute;inset:0;background:#fff;transform:translateY(101%);transition:.45s var(--ease)}
+.btn-acid:hover::before{transform:none}
+.btn-acid span,.btn-acid svg{position:relative;z-index:1}
+.btn-acid svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;transition:transform .4s var(--ease)}
+.btn-acid:hover svg{transform:translateX(6px)}
+.btn-mini{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;text-transform:uppercase;padding:8px 14px;border:1px solid var(--border-2);background:transparent;color:#fff;transition:.25s;font-weight:600}
+.btn-mini:hover{background:var(--acid);color:#000;border-color:var(--acid)}
+.btn-mini.danger{border-color:var(--red);color:var(--red)}
+.btn-mini.danger:hover{background:var(--red);color:#fff}
+.btn-prime{font-family:'JetBrains Mono';font-size:11px;letter-spacing:3px;text-transform:uppercase;padding:13px 22px;border:1px solid var(--acid);background:var(--acid);color:#000;transition:.3s;font-weight:700;display:inline-flex;align-items:center;gap:10px}
+.btn-prime:hover{background:#fff;border-color:#fff}
+.btn-prime svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* ADMIN LOGIN */
+.adlogin{position:fixed;inset:0;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;padding:30px;z-index:2}
+.adlogin.gone{display:none}
+.adl-card{width:100%;max-width:440px}
+.adl-eye{font-family:'JetBrains Mono';font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--acid);margin-bottom:18px;display:flex;align-items:center;gap:14px;font-weight:600}
+.adl-eye::before{content:"";width:30px;height:1px;background:var(--acid)}
+.adl-card h2{font-family:'Bricolage Grotesque';font-weight:800;font-size:54px;line-height:.95;margin-bottom:16px;letter-spacing:-.04em}
+.adl-card h2 em{color:var(--acid);font-style:italic;font-weight:700}
+.adl-card p{font-size:13px;color:var(--t3);margin-bottom:28px}
+.adl-card p b{color:var(--acid);font-weight:600}
+.adl-otp{margin:6px 0 18px;padding:18px;border:1px dashed var(--acid);background:var(--acid-soft);text-align:center;cursor:pointer}
+.adl-otp .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--acid);margin-bottom:8px;font-weight:600}
+.adl-otp .c{font-family:'JetBrains Mono';font-weight:700;font-size:36px;letter-spacing:.16em;color:var(--acid)}
+.adl-back{display:inline-block;margin-top:16px;font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--acid);border-bottom:1px solid currentColor;font-weight:600}
+
+/* ADMIN SHELL */
+.admin-shell{display:grid;grid-template-columns:260px 1fr;height:100vh;background:#000}
+.adside{background:#0a0a0a;color:#fff;padding:32px 0;display:flex;flex-direction:column;border-right:1px solid var(--border);overflow-y:auto}
+.adside .ab{padding:0 26px 30px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.adside .ab .name{font-family:'Bricolage Grotesque';font-weight:800;font-size:30px;line-height:1;letter-spacing:-.035em}
+.adside .ab .name em{color:var(--acid);font-style:italic;font-weight:700}
+.adside .ab .sub{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:3px;text-transform:uppercase;color:var(--acid);margin-top:6px;font-weight:600}
+.adsec{padding:0 14px 8px;font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:3px;text-transform:uppercase;color:var(--t4);margin:14px 0 8px;font-weight:600}
+.adnav button{display:flex;align-items:center;gap:14px;width:100%;padding:13px 26px;font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:2px;color:var(--t2);text-align:left;transition:.25s;border-left:2px solid transparent;font-weight:500;text-transform:uppercase}
+.adnav button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5}
+.adnav button:hover{color:#fff;background:rgba(255,255,255,.03)}
+.adnav button.on{color:var(--acid);background:var(--acid-soft);border-left-color:var(--acid)}
+.adside .foot{margin-top:auto;padding:24px 26px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.adside .foot a,.adside .foot button{font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--t2);display:flex;align-items:center;gap:10px;text-align:left;transition:.25s;font-weight:500;padding:0}
+.adside .foot a:hover,.adside .foot button:hover{color:var(--acid)}
+.admain{display:flex;flex-direction:column;overflow:hidden;background:#000}
+.adtop{padding:22px 36px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#0a0a0a}
+.adtop h1{font-family:'Bricolage Grotesque';font-weight:800;font-size:36px;line-height:1;letter-spacing:-.025em}
+.adtop h1 em{color:var(--acid);font-style:italic;font-weight:700}
+.adtop .crumb{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);margin-bottom:5px;font-weight:600}
+.adtop .rt{display:flex;gap:12px;align-items:center}
+.adcontent{flex:1;overflow-y:auto;padding:36px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:36px}
+.stat{padding:28px;background:#0a0a0a;border:1px solid var(--border);position:relative;overflow:hidden;transition:.3s}
+.stat:hover{border-color:var(--acid)}
+.stat .l{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);margin-bottom:14px;font-weight:600}
+.stat .n{font-family:'Bricolage Grotesque';font-weight:800;font-size:60px;line-height:.9;letter-spacing:-.04em;color:#fff}
+.stat .n em{color:var(--acid);font-style:italic;font-weight:700}
+.stat .d{font-family:'JetBrains Mono';font-size:10.5px;color:var(--green);margin-top:14px;letter-spacing:1.5px;font-weight:600;text-transform:uppercase}
+.stat .d.warn{color:var(--red)}
+.stat::after{content:"";position:absolute;bottom:0;left:0;height:2px;background:var(--acid);transform-origin:left;transform:scaleX(0);transition:.5s var(--ease)}
+.stat:hover::after{transform:scaleX(1)}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.stats{grid-template-columns:1fr}}
+.panel{background:#0a0a0a;border:1px solid var(--border);margin-bottom:26px}
+.panel-h{padding:20px 26px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.panel-h h3{font-family:'Bricolage Grotesque';font-weight:800;font-size:24px;line-height:1;letter-spacing:-.025em}
+.panel-h h3 em{color:var(--acid);font-style:italic}
+.panel-h .ct{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);font-weight:600}
+table.t{width:100%;border-collapse:collapse;font-family:'Space Grotesk';font-size:13px}
+table.t th{text-align:left;padding:14px 26px;font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--border);font-weight:600}
+table.t td{padding:16px 26px;border-bottom:1px solid var(--border);color:#fff;vertical-align:middle}
+table.t tr:hover td{background:rgba(255,255,255,.02)}
+table.t .nm{font-family:'Bricolage Grotesque';font-size:16px;font-weight:800;letter-spacing:-.02em}
+table.t .mut{color:var(--t3);font-size:11.5px;font-family:'JetBrains Mono';letter-spacing:1px}
+.statusp{display:inline-flex;align-items:center;padding:5px 11px;font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;border:1px solid currentColor}
+.s-Processing{color:var(--acid)}.s-Shipped{color:#7ad6ff}.s-Delivered{color:var(--green)}.s-Cancelled{color:var(--red)}
+.statussel{font-family:'JetBrains Mono';font-size:11px;padding:6px 8px;border:1px solid var(--border-2);background:transparent;letter-spacing:1px;text-transform:uppercase;font-weight:600;color:#fff}
+.adgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.adp{background:#0a0a0a;border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;transition:.3s}
+.adp:hover{border-color:var(--acid);transform:translateY(-3px)}
+.adp .th{aspect-ratio:1;background:linear-gradient(180deg,#181818,#0a0a0a);display:flex;align-items:center;justify-content:center;position:relative}
+.adp .th svg{width:55%;height:55%;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.adp .th .t{position:absolute;top:10px;right:10px;font-family:'JetBrains Mono';font-size:9px;letter-spacing:2px;padding:4px 8px;background:#fff;color:#000;font-weight:700;text-transform:uppercase}
+.adp .t.HOT{background:var(--acid)}.adp .t.NEW{background:#fff}.adp .t.SALE{background:var(--red);color:#fff}
+.adp .b{padding:14px;display:flex;flex-direction:column;gap:6px}
+.adp .br{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--acid);font-weight:600}
+.adp .nm{font-family:'Bricolage Grotesque';font-weight:800;font-size:18px;line-height:1.1;letter-spacing:-.02em}
+.adp .pr{font-family:'JetBrains Mono';font-size:11.5px;color:#fff;font-weight:600;letter-spacing:1px}
+.adp .pr em{color:var(--acid);font-style:normal;font-weight:700}
+.adp .ac{display:flex;gap:6px;margin-top:8px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.form-grid .full{grid-column:1/-1}
+.imgslot{display:flex;flex-direction:column;gap:6px}
+.imgprev{position:relative;aspect-ratio:1;border:1px dashed var(--border-2);background:#0a0a0a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.imgprev img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.imgph{font-family:'JetBrains Mono';font-size:9px;letter-spacing:1.5px;color:var(--t3);text-align:center;font-weight:600}
+.imgx{position:absolute;top:4px;right:4px;width:22px;height:22px;background:rgba(0,0,0,.85);color:#fff;border:1px solid var(--red);font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;z-index:2}
+.imgx:hover{background:var(--red)}
+
+/* Size & Color click selectors */
+.pickerGrid{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--border);background:#0a0a0a}
+.pickChip{padding:9px 14px;border:1px solid var(--border-2);background:transparent;color:var(--t2);font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.5px;font-weight:600;cursor:pointer;transition:all .15s;min-width:42px;text-align:center}
+.pickChip:hover{border-color:var(--t2);color:#fff}
+.pickChip.on{background:var(--acid);border-color:var(--acid);color:#000}
+.colorChip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid var(--border-2);background:transparent;color:var(--t2);font-family:'Space Grotesk';font-size:12px;cursor:pointer;transition:all .15s;font-weight:500}
+.colorChip:hover{border-color:var(--t2);color:#fff}
+.colorChip.on{border-color:var(--acid);color:#fff;background:#1a1a0a}
+.colorChip .swatch{width:16px;height:16px;border-radius:50%;border:1px solid rgba(255,255,255,.2);flex:none}
+.colorChip.on .swatch{box-shadow:0 0 0 2px var(--acid)}
+.pickInfo{font-family:'JetBrains Mono';font-size:9.5px;color:var(--t3);letter-spacing:1.5px;margin-top:6px;text-transform:uppercase;font-weight:600}
+.aiBtn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:linear-gradient(135deg,#d6ff00 0%,#a3cc00 100%);color:#000;font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;border:none;cursor:pointer;transition:transform .2s;width:100%;justify-content:center;margin-top:6px}
+.aiBtn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(214,255,0,.3)}
+.aiBtn:disabled{opacity:.5;cursor:wait;transform:none}
+.ad-burger{display:none}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:980px){
+  .admin-shell{grid-template-columns:1fr}
+  .adside{position:absolute;top:0;left:-100%;width:280px;height:100%;transition:.4s;z-index:5}
+  .adside.open{left:0}
+  .adcontent{padding:22px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .form-grid{grid-template-columns:1fr}
+  .ad-burger{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border:1px solid var(--border-2);color:#fff}
+  .adl-card h2{font-size:42px}
+  /* Profit calc grid: 4 cols → 2 cols on tablet */
+  .profitGrid{grid-template-columns:1fr 1fr!important}
+  /* 5-image grid: 5 → 3 on tablet */
+  .imgGrid5{grid-template-columns:repeat(3,1fr)!important}
+}
+@media(max-width:640px){
+  .adcontent{padding:14px 12px}
+  .stats{grid-template-columns:1fr}
+  .panel-h{padding:14px 16px;flex-wrap:wrap;gap:8px}
+  .panel-h h3{font-size:18px}
+  /* Profit grid: stack vertically */
+  .profitGrid{grid-template-columns:1fr!important;gap:10px!important}
+  /* 5-image grid: 3 → 2 on phone */
+  .imgGrid5{grid-template-columns:repeat(2,1fr)!important}
+  /* Form padding less */
+  form.form-grid{padding:14px!important}
+  /* Tables scroll horizontally */
+  .t{font-size:11px}
+  .panel{overflow-x:auto}
+  /* Login card */
+  .adl-card{padding:24px 18px}
+  .adl-card h2{font-size:32px;letter-spacing:-.02em}
+  .adl-eye{font-size:9px;letter-spacing:2px}
+  /* Picker grids on mobile */
+  .pickerGrid{padding:6px;gap:5px}
+  .pickChip{padding:8px 10px;font-size:10.5px;min-width:38px}
+  .colorChip{font-size:11px;padding:6px 9px}
+  .colorChip .swatch{width:14px;height:14px}
+  /* Profit boxes shrink */
+  .profitBox .v{font-size:18px!important}
+  /* AI button bigger touch target */
+  .aiBtn{padding:12px 16px;font-size:11.5px}
+  /* Admin top bar wraps */
+  .adtop{padding:14px 16px;flex-wrap:wrap;gap:10px}
+  /* Sidebar nav items wider touch */
+  .adnav a{padding:14px 18px}
+}
+@media(max-width:380px){
+  /* Very small phones */
+  .imgGrid5{grid-template-columns:1fr 1fr!important}
+  .stats .stat .n{font-size:24px}
+  .panel-h h3{font-size:16px}
+}
+
+/* TOAST */
+#toasts{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:1000;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:none}
+.toast{background:#000;color:#fff;padding:13px 22px;display:flex;align-items:center;gap:11px;font-family:'JetBrains Mono';font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;border:1px solid var(--acid);box-shadow:0 24px 50px -20px rgba(0,0,0,.8);animation:tin .4s var(--ease);max-width:90vw}
+.toast svg{width:14px;height:14px;stroke:var(--acid);fill:none;stroke-width:2;flex:none}
+@keyframes tin{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.toast.out{animation:tout .35s var(--ease) forwards}
+@keyframes tout{to{opacity:0;transform:translateY(20px)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="adlogin" id="adLogin">
+  <div class="adl-card">
+    <div class="adl-eye"><span>Restricted · Admin Console</span></div>
+    <h2>Atelier <em>Admin.</em></h2>
+    <p id="adlMsg">Enter the admin password. Default: <b>euluxury2025</b></p>
+    <form id="adLoginForm" onsubmit="adminLogin(event);return false;">
+      <div class="fld" id="adPwdFld"><label>Password</label><input type="password" id="adPwd" placeholder="••••••••" autocomplete="current-password"></div>
+      <div id="adOtpStep" style="display:none">
+        <div class="adl-otp" onclick="document.getElementById('adOtp').value=document.getElementById('otpShown').textContent;document.getElementById('adOtp').focus();" title="Click to auto-fill"><div class="l">OTP — Tap to fill ↓</div><div class="c" id="otpShown">— — — —</div></div>
+        <div class="fld"><label>Enter OTP</label><input type="text" id="adOtp" placeholder="4-digit" autocomplete="one-time-code"></div>
+      </div>
+      <button type="button" class="btn-acid" onclick="adminLogin(event)"><span id="adLoginBtn">Verify Password</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </form>
+    <a href="/" class="adl-back">← Back to store</a>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div class="admin-shell" id="adShell" style="display:none">
+  <aside class="adside" id="adSide">
+    <div class="ab"><div class="name">EU <em>Luxury.</em></div><div class="sub">Admin Console</div></div>
+    <div class="adsec">Manage</div>
+    <div class="adnav">
+      <button data-t="dashboard" class="on" onclick="adTab('dashboard')"><svg viewBox="0 0 24 24"><path d="M3 12h7V3H3zM14 21h7v-9h-7zM14 10h7V3h-7zM3 21h7v-7H3z"/></svg>Dashboard</button>
+      <button data-t="products" onclick="adTab('products')"><svg viewBox="0 0 24 24"><path d="M20 7 12 3 4 7v10l8 4 8-4Z"/><path d="m4 7 8 4 8-4M12 11v10"/></svg>Products</button>
+      <button data-t="orders" onclick="adTab('orders')"><svg viewBox="0 0 24 24"><path d="M9 3h6l2 4H7Z"/><path d="M5 7h14v14H5Z"/><path d="M9 12h6"/></svg>Orders</button>
+      <button data-t="promos" onclick="adTab('promos')"><svg viewBox="0 0 24 24"><path d="M3 12 12 3l9 9-9 9Z"/><circle cx="9" cy="9" r="1.5"/></svg>Promos</button>
+    </div>
+    <div class="adsec">Audience</div>
+    <div class="adnav">
+      <button data-t="customers" onclick="adTab('customers')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>Customers</button>
+      <button data-t="subscribers" onclick="adTab('subscribers')"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4Z"/><path d="m4 6 8 6 8-6"/></svg>Subscribers</button>
+    </div>
+    <div class="adsec">House</div>
+    <div class="adnav">
+      <button data-t="settings" onclick="adTab('settings')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4 12H1M23 12h-3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Settings</button>
+      <button data-t="help" onclick="adTab('help')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 9a3 3 0 0 1 6 0c0 2-3 2-3 4"/><path d="M12 17h.01"/></svg>Help &amp; Guide</button>
+    </div>
+    <div class="foot">
+      <a href="/"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.6"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>View Store</a>
+      <button onclick="adminLogout()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.6"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>Sign Out</button>
+    </div>
+  </aside>
+  <main class="admain">
+    <div class="adtop">
+      <div style="display:flex;gap:14px;align-items:center">
+        <button class="ad-burger" onclick="document.getElementById('adSide').classList.toggle('open')"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+        <div><div class="crumb" id="adCrumb">Admin · Dashboard</div><h1 id="adTitle">Dashboard</h1></div>
+      </div>
+      <div class="rt"><a class="btn-mini" href="/">← Store</a></div>
+    </div>
+    <div class="adcontent" id="adContent"></div>
+  </main>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ============ SUPABASE (LIVE BACKEND) ============ */
+const SUPABASE_URL='https://nymycljtgnzjzimpnzeq.supabase.co';
+const SUPABASE_KEY='sb_publishable_s0GQkAWcCC1R3xQdrB_-2Q_FVf3YSaR';
+const sb=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+
+/* SB = async Supabase wrapper. Updates the global arrays for sync rendering. */
+const SB={
+  async loadAll(){
+    if(!sb){console.warn('Supabase CDN not loaded — running offline');return false;}
+    try{
+      const [p,o,s,c,pr,sub]=await Promise.all([
+        sb.from('products').select('*').order('id'),
+        sb.from('orders').select('*').order('created_at',{ascending:false}),
+        sb.from('site').select('*').eq('key','config').maybeSingle(),
+        sb.from('customers').select('*'),
+        sb.from('promos').select('*'),
+        sb.from('subscribers').select('*')
+      ]);
+      if(p.data)PRODUCTS=p.data;
+      if(o.data)ORDERS=o.data;
+      if(s.data&&s.data.value)SITE=Object.assign({},DEFAULT_SITE,s.data.value);
+      if(c.data)CUSTOMERS=c.data;
+      if(pr.data)PROMOS=pr.data.map(r=>({code:r.code,off:r.off,desc:r.descr,expiry:r.expiry,active:r.active}));
+      if(sub.data)SUBSCRIBERS=sub.data.map(r=>({email:r.email,date:r.joined}));
+      return true;
+    }catch(e){console.error('Supabase load error:',e);toast('Connection error — check internet');return false;}
+  },
+  async saveProduct(p){
+    if(!sb){toast('Offline — no database');return false;}
+    const{error}=await sb.from('products').upsert(p);
+    if(error){toast('Save failed: '+error.message);return false;}
+    return true;
+  },
+  async delProduct(id){
+    if(!sb){toast('Offline');return false;}
+    const{error}=await sb.from('products').delete().eq('id',id);
+    if(error){toast('Delete failed: '+error.message);return false;}
+    return true;
+  },
+  async saveSite(v){
+    if(!sb){toast('Offline');return false;}
+    const{error}=await sb.from('site').upsert({key:'config',value:v});
+    if(error){toast('Settings save failed: '+error.message);return false;}
+    return true;
+  },
+  async setOrderStatus(id,s){
+    if(!sb){toast('Offline');return false;}
+    const{error}=await sb.from('orders').update({status:s}).eq('id',id);
+    if(error){toast('Status update failed');return false;}
+    return true;
+  },
+  async addPromo(p){
+    if(!sb){toast('Offline');return false;}
+    const{error}=await sb.from('promos').insert({code:p.code,off:p.off,descr:p.desc,expiry:p.expiry,active:p.active});
+    if(error){toast('Add failed: '+error.message);return false;}
+    return true;
+  },
+  async updatePromo(code,fields){
+    if(!sb){toast('Offline');return false;}
+    const{error}=await sb.from('promos').update(fields).eq('code',code);
+    if(error){toast('Update failed');return false;}
+    return true;
+  },
+  async delPromo(code){
+    if(!sb){toast('Offline');return false;}
+    const{error}=await sb.from('promos').delete().eq('code',code);
+    if(error){toast('Delete failed');return false;}
+    return true;
+  }
+};
+
+/* Legacy localStorage helper (only used as fallback cache) */
+const DB={r(k,d){try{const v=localStorage.getItem('elh_'+k);return v?JSON.parse(v):d;}catch(e){return d;}},w(k,v){try{localStorage.setItem('elh_'+k,JSON.stringify(v));}catch(e){}}};
+
+/* ============ SIZE & COLOR PRESETS (click selectors) ============ */
+const SIZE_PRESETS={
+  sneaker:['35','36','37','38','39','40','41','42','43','44','45','46'],
+  hoodie:['XS','S','M','L','XL','XXL'],
+  tee:['XS','S','M','L','XL','XXL'],
+  denim:['28','29','30','31','32','33','34','36','38'],
+  watch:['One Size'],
+  jewel:['One Size','S','M','L'],
+  bag:['One Size','Mini','Small','Medium','Large'],
+  cap:['One Size','S/M','L/XL']
+};
+const COLOR_PRESETS=[
+  {name:'Black',hex:'#0a0a0a'},{name:'White',hex:'#ffffff'},{name:'Cream',hex:'#f5f0e1'},
+  {name:'Grey',hex:'#888'},{name:'Charcoal',hex:'#36454f'},{name:'Beige',hex:'#e8d8b8'},
+  {name:'Sand',hex:'#e6d3a3'},{name:'Tan',hex:'#c9a675'},{name:'Brown',hex:'#6b4423'},
+  {name:'Mocha',hex:'#8d6e5b'},{name:'Olive',hex:'#556b2f'},{name:'Sage',hex:'#9caf88'},
+  {name:'Navy',hex:'#1a2a4a'},{name:'Blue',hex:'#3050d8'},{name:'Indigo',hex:'#3a2a8a'},
+  {name:'Red',hex:'#c93030'},{name:'Pink',hex:'#ffb3c1'},{name:'Blush',hex:'#ffd5d0'},
+  {name:'Rose',hex:'#d97a8e'},{name:'Gold',hex:'#d4af37'},{name:'Silver',hex:'#c0c0c0'},
+  {name:'Rose Gold',hex:'#b76e79'},{name:'Graphite',hex:'#383838'},{name:'Green',hex:'#3a7a3a'}
+];
+/* Track form-state selections (reset on form open) */
+let pickedSizes=[],pickedColors=[];
+
+/* ============ SITE CONFIG ============ */
+const DEFAULT_SITE={
+  brand:'EU LUXURY HUB',tagline:'Authentic · Europe',whatsapp:'48660902453',whatsappDisplay:'+48 660 902 453',
+  email:'kishannayi30@gmail.com',location:'Warsaw, Poland',
+  heroEye:'Live Now · Verified Reseller',heroH1:'Real',heroH2:'brands.',heroH3:'No retail tax.',
+  heroLede:'Sneakers, watches, hoodies, bags & jewellery from the brands you actually want — authenticated by us, shipped free across Europe, priced personally on WhatsApp.',
+  heroCta1:'Shop the Drop',heroCta2:'Get Member Pricing',
+  featuredBrand:'ELH · Sneakers',featuredName:'Aurelio Court Low',featuredEdition:'N°01',featuredId:'m1',
+  vipH:'Get drops first. Get prices private.',
+  vipP:"Drop a line and we'll DM you new arrivals every Wednesday, unlock private codes, and quote member-only pricing.",
+  vipBtn:'Notify Me',quoteEye:'House Note · N° 26',quoteText:'Same hype. Half the wait. All real.',
+  tr1Title:'100% Authentic',tr1Desc:"Every piece hand-checked. We don't ship replicas — ever.",
+  tr2Title:'Free EU Delivery',tr2Desc:'Free, tracked shipping to your door anywhere in Europe.',
+  tr3Title:'DM for Price',tr3Desc:'Your price, your way. Negotiate, bulk-buy, or get a member discount on WhatsApp.',
+  tr4Title:'New Drops Weekly',tr4Desc:'Fresh sneakers, watches & ready-to-wear every Wednesday at 12:00 CET.'
+};
+let SITE=Object.assign({},DEFAULT_SITE,DB.r('site',{})||{});
+
+/* ============ ICONS / DATA ============ */
+const ICONS={
+  sneaker:'<svg viewBox="0 0 100 100"><path d="M8 64c0-8 6-10 12-14 8-5 14-12 20-22 2-3 6-3 7 1l2 9c1 4 4 6 8 7l24 6c6 2 9 5 9 11v6a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4Z"/><path d="M8 70h84"/><path d="M40 38l8 5M48 32l9 6M56 28l9 6"/></svg>',
+  watch:'<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="22"/><path d="M50 38v12l8 5"/><path d="M40 28l3-14h14l3 14M40 72l3 14h14l3-14"/></svg>',
+  hoodie:'<svg viewBox="0 0 100 100"><path d="M30 26 18 38v18l10 4v26h44V60l10-4V38L70 26"/><path d="M30 26c0 11 9 16 20 16s20-5 20-16"/><path d="M50 42v22"/><path d="M40 30c2 6 18 6 20 0"/></svg>',
+  denim:'<svg viewBox="0 0 100 100"><path d="M30 16h40l3 30-6 38h-12l-5-40-5 40H33l-6-38Z"/><path d="M30 16h40M50 18v28"/></svg>',
+  jewel:'<svg viewBox="0 0 100 100"><path d="M20 50a30 18 0 1 0 60 0 30 18 0 1 0-60 0Z"/><path d="M44 64l6 14 6-14"/><circle cx="50" cy="82" r="5"/></svg>',
+  tee:'<svg viewBox="0 0 100 100"><path d="M34 22 18 34l8 12 8-5v40h36V41l8 5 8-12L78 22 66 28a18 9 0 0 1-32 0Z"/></svg>',
+  bag:'<svg viewBox="0 0 100 100"><path d="M22 36h56l-4 50H26Z"/><path d="M36 36v-8a14 14 0 0 1 28 0v8"/></svg>',
+  cap:'<svg viewBox="0 0 100 100"><path d="M14 58c0-22 16-36 36-36s36 14 36 36"/><path d="M14 58h72v8a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4Z"/><path d="M50 22v18"/></svg>'
+};
+const DEFAULT_PRODUCTS=[
+  {id:'m1',g:'men',cat:'sneaker',brand:'Sneakers',name:'Aurelio Court Low',price:120,sizes:['40','41','42','43','44','45'],colors:['White','Black','Sand'],tag:'NEW',image:''},
+  {id:'m2',g:'men',cat:'watch',brand:'Timepieces',name:'Monaco Automatic',price:185,sizes:['One Size'],colors:['Silver','Gold','Graphite'],tag:'HOT',image:''},
+  {id:'m3',g:'men',cat:'hoodie',brand:'Apparel',name:'Côte Heavy Hoodie',price:75,sizes:['S','M','L','XL','XXL'],colors:['Charcoal','Cream','Olive'],tag:'SALE',image:''},
+  {id:'m4',g:'men',cat:'denim',brand:'Denim',name:'Riviera Slim Jean',price:85,sizes:['30','32','34','36'],colors:['Indigo','Black'],tag:'',image:''},
+  {id:'m5',g:'men',cat:'jewel',brand:'Fine Jewellery',name:'Lumière Curb Chain',price:65,sizes:['One Size'],colors:['Gold','Silver'],tag:'HOT',image:''},
+  {id:'m6',g:'men',cat:'bag',brand:'Accessories',name:'Atelier Crossbody',price:95,sizes:['One Size'],colors:['Black','Tan'],tag:'',image:''},
+  {id:'w1',g:'women',cat:'sneaker',brand:'Sneakers',name:'Séraphine Runner',price:118,sizes:['36','37','38','39','40','41'],colors:['White','Blush','Black'],tag:'NEW',image:''},
+  {id:'w2',g:'women',cat:'watch',brand:'Timepieces',name:'Belle Île Mini',price:165,sizes:['One Size'],colors:['Rose Gold','Silver','Gold'],tag:'HOT',image:''},
+  {id:'w3',g:'women',cat:'hoodie',brand:'Apparel',name:'Maison Knit Hoodie',price:78,sizes:['XS','S','M','L','XL'],colors:['Cream','Sage','Mocha'],tag:'',image:''},
+  {id:'w4',g:'women',cat:'bag',brand:'Bags',name:'Provence Tote',price:135,sizes:['One Size'],colors:['Black','Tan','Cream'],tag:'',image:''},
+  {id:'w5',g:'women',cat:'jewel',brand:'Fine Jewellery',name:'Étoile Tennis Bracelet',price:72,sizes:['One Size'],colors:['Gold','Silver'],tag:'SALE',image:''},
+  {id:'w6',g:'women',cat:'tee',brand:'Apparel',name:'Marais Relaxed Tee',price:45,sizes:['XS','S','M','L','XL'],colors:['White','Rose','Black'],tag:'',image:''}
+];
+let PRODUCTS=DB.r('products',null)||JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+let ORDERS=DB.r('orders',null)||[
+  {id:'ELH-A1B2C3',name:'Anna K.',phone:'+48 601 222 333',address:'ul. Marszałkowska 12, Warsaw',items:[{p:'m1',s:'42',c:'White',q:1}],pay:'Revolut',status:'Shipped',date:'2026-05-24',total:120},
+  {id:'ELH-D4E5F6',name:'Jakub M.',phone:'+48 723 145 921',address:'ul. Nowogrodzka 8, Warsaw',items:[{p:'m2',s:'One Size',c:'Gold',q:1}],pay:'Bank Transfer',status:'Processing',date:'2026-05-26',total:185},
+  {id:'ELH-G7H8I9',name:'Sofia L.',phone:'+48 502 911 044',address:'ul. Mickiewicza 4, Krakow',items:[{p:'w2',s:'One Size',c:'Rose Gold',q:1},{p:'w5',s:'One Size',c:'Gold',q:1}],pay:'Revolut',status:'Delivered',date:'2026-05-19',total:237},
+  {id:'ELH-J0K1L2',name:'Marek W.',phone:'+48 660 700 800',address:'ul. Słowackiego 22, Gdańsk',items:[{p:'m3',s:'L',c:'Charcoal',q:1}],pay:'Bank Transfer',status:'Processing',date:'2026-05-27',total:75},
+  {id:'ELH-M3N4O5',name:'Klaudia P.',phone:'+48 781 002 333',address:'ul. Piłsudskiego 17, Łódź',items:[{p:'w1',s:'38',c:'Blush',q:1}],pay:'Revolut',status:'Delivered',date:'2026-05-15',total:118}
+];
+let CUSTOMERS=DB.r('customers',null)||[
+  {name:'Anna Kowalska',email:'anna.k@email.com',phone:'+48 601 222 333',joined:'2026-04-12',orders:3},
+  {name:'Jakub Mazur',email:'jakub.m@email.com',phone:'+48 723 145 921',joined:'2026-05-01',orders:1},
+  {name:'Sofia Lewandowska',email:'sofia.l@email.com',phone:'+48 502 911 044',joined:'2026-03-08',orders:5},
+  {name:'Marek Wojcik',email:'marek.w@email.com',phone:'+48 660 700 800',joined:'2026-05-22',orders:1},
+  {name:'Klaudia Pawlak',email:'klaudia.p@email.com',phone:'+48 781 002 333',joined:'2026-04-30',orders:2}
+];
+let SUBSCRIBERS=DB.r('subs',null)||[{email:'vip1@email.com',date:'2026-05-20'},{email:'vip2@email.com',date:'2026-05-22'}];
+let PROMOS=DB.r('promos',null)||[
+  {code:'WELCOME10',off:10,desc:'10% welcome discount',expiry:'2026-12-31',active:true},
+  {code:'VIP15',off:15,desc:'15% VIP discount',expiry:'2026-12-31',active:true},
+  {code:'DROP20',off:20,desc:'20% drop exclusive',expiry:'2026-09-30',active:true}
+];
+
+/* ============ TOAST ============ */
+function toast(m){const t=document.createElement('div');t.className='toast';t.innerHTML=`<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>${m}</span>`;document.getElementById('toasts').appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),360);},2800);}
+
+/* ============ LOGIN ============ */
+const ADMIN_PWD='euluxury2025';
+let adStep='pwd',adOTP='',curTab='dashboard';
+async function adminLogin(e){
+  if(e&&e.preventDefault)e.preventDefault();
+  if(adStep==='pwd'){
+    const v=(document.getElementById('adPwd').value||'').trim();
+    if(v===ADMIN_PWD){
+      adStep='otp';adOTP=Math.floor(1000+Math.random()*9000).toString();
+      document.getElementById('otpShown').textContent=adOTP;
+      document.getElementById('adOtpStep').style.display='block';
+      document.getElementById('adPwdFld').style.display='none';
+      document.getElementById('adLoginBtn').textContent='Enter Admin →';
+      document.getElementById('adlMsg').innerHTML='OTP auto-filled below. Just click "Enter Admin".';
+      document.getElementById('adOtp').value=adOTP;
+      setTimeout(()=>{const o=document.getElementById('adOtp');if(o)o.focus();},100);
+    }else{toast('Wrong password');}
+  }else{
+    if((document.getElementById('adOtp').value||'').trim()===adOTP){
+      // Show loading + fetch live data from Supabase
+      document.getElementById('adlMsg').innerHTML='Connecting to live database…';
+      const ok=await SB.loadAll();
+      document.getElementById('adLogin').style.display='none';
+      document.getElementById('adShell').style.display='grid';
+      adTab(curTab);
+      toast(ok?'Welcome admin · LIVE ●':'Welcome (offline mode)');
+    }else{toast('Wrong OTP: '+adOTP);}
+  }
+  return false;
+}
+function adminLogout(){adStep='pwd';adOTP='';document.getElementById('adPwd').value='';if(document.getElementById('adOtp'))document.getElementById('adOtp').value='';document.getElementById('adOtpStep').style.display='none';document.getElementById('adPwdFld').style.display='block';document.getElementById('adLogin').style.display='flex';document.getElementById('adShell').style.display='none';document.getElementById('adLoginBtn').textContent='Verify Password';}
+
+/* ============ TABS ============ */
+function adTab(t){
+  curTab=t;document.querySelectorAll('.adnav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  const titles={dashboard:'Dashboard',products:'Products',orders:'Orders',promos:'Promo Codes',customers:'Customers',subscribers:'Subscribers',settings:'Site Settings',help:'Help & Guide'};
+  document.getElementById('adTitle').textContent=titles[t];
+  document.getElementById('adCrumb').textContent='Admin · '+titles[t];
+  const c=document.getElementById('adContent');
+  if(t==='dashboard')c.innerHTML=renderDash();
+  else if(t==='products')c.innerHTML=renderProducts();
+  else if(t==='orders')c.innerHTML=renderOrders();
+  else if(t==='promos')c.innerHTML=renderPromos();
+  else if(t==='customers')c.innerHTML=renderCustomers();
+  else if(t==='subscribers')c.innerHTML=renderSubs();
+  else if(t==='settings')c.innerHTML=renderSettings();
+  else if(t==='help')c.innerHTML=renderHelp();
+  document.getElementById('adSide').classList.remove('open');
+}
+
+function renderDash(){
+  const active=ORDERS.filter(o=>o.status!=='Cancelled');
+  const rev=active.reduce((a,b)=>a+(parseFloat(b.total)||0),0);
+  // Calculate total cost & profit from sold items
+  let totalCost=0;
+  active.forEach(o=>{
+    if(Array.isArray(o.items))o.items.forEach(it=>{
+      const prod=PRODUCTS.find(p=>p.id===it.p);
+      if(prod&&prod.cost)totalCost+=parseFloat(prod.cost)*(it.q||1);
+    });
+  });
+  const totalProfit=rev-totalCost;
+  const margin=rev>0?Math.round(totalProfit/rev*100):0;
+  const margCol=margin>=30?'var(--acid)':margin>=10?'#ffaa00':'var(--red)';
+  return `<div class="stats">
+    <div class="stat"><div class="l">Revenue</div><div class="n">€<em>${rev.toFixed(0)}</em></div><div class="d">↑ Total sales</div></div>
+    <div class="stat" style="border-color:var(--acid)"><div class="l" style="color:var(--acid)">💰 PROFIT</div><div class="n" style="color:${totalProfit>=0?'var(--green)':'var(--red)'}">€<em>${totalProfit.toFixed(0)}</em></div><div class="d" style="color:${margCol}">${margin}% MARGIN</div></div>
+    <div class="stat"><div class="l">Cost (paid)</div><div class="n">€<em>${totalCost.toFixed(0)}</em></div><div class="d">Total spent</div></div>
+    <div class="stat"><div class="l">Orders</div><div class="n">${ORDERS.length}</div><div class="d">${ORDERS.filter(o=>o.status==='Processing').length} processing</div></div>
+  </div>
+  <div class="stats" style="margin-top:0">
+    <div class="stat"><div class="l">Customers</div><div class="n">${CUSTOMERS.length}</div><div class="d">Registered</div></div>
+    <div class="stat"><div class="l">Subscribers</div><div class="n">${SUBSCRIBERS.length}</div><div class="d">VIP list</div></div>
+    <div class="stat"><div class="l">Products</div><div class="n">${PRODUCTS.length}</div><div class="d">In catalogue</div></div>
+    <div class="stat"><div class="l">Low Stock</div><div class="n">${PRODUCTS.filter(p=>p.sizes&&p.sizes.length<=2).length}</div><div class="d warn">Restock</div></div>
+  </div>
+  <div class="panel"><div class="panel-h"><h3>Recent <em>Orders</em></h3><div class="ct">Last ${Math.min(5,ORDERS.length)}</div></div>
+  <table class="t"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+  <tbody>${ORDERS.slice(0,5).map(o=>`<tr><td class="nm">#${o.id}</td><td>${o.name}<div class="mut">${o.phone}</div></td><td>${o.items.length} ${o.items.length===1?'pc':'pcs'}</td><td><strong>€${o.total}</strong></td><td><span class="statusp s-${o.status}">${o.status}</span></td><td class="mut">${o.date}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+let editingP=null;
+function renderProducts(){
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;gap:20px;flex-wrap:wrap">
+    <div><div style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);margin-bottom:6px;font-weight:600">${PRODUCTS.length} pieces</div><h2 style="font-family:'Bricolage Grotesque';font-weight:800;font-size:38px;letter-spacing:-.03em;line-height:1">Catalogue</h2></div>
+    <button class="btn-prime" onclick="showProductForm(null)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add Piece</button>
+  </div>
+  <div id="prodFormHost"></div>
+  <div class="adgrid">${PRODUCTS.map(p=>{
+    const img=(p.images&&p.images[0])||p.image||'';
+    const cost=p.cost||0;
+    const profit=(p.price||0)-cost;
+    const marg=p.price>0?Math.round(profit/p.price*100):0;
+    const margCol=marg>=30?'var(--acid)':marg>=10?'#ffaa00':'var(--red)';
+    return `<div class="adp"><div class="th">${p.tag?`<div class="t ${p.tag}">${p.tag}</div>`:''}${(p.images&&p.images.length>1)?`<div style="position:absolute;bottom:8px;left:8px;font-family:'JetBrains Mono';font-size:9px;letter-spacing:1.5px;background:rgba(0,0,0,.7);color:#fff;padding:3px 7px;font-weight:600">📸 ${p.images.length}</div>`:''}${img?`<img src="${img}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`:ICONS[p.cat]}</div><div class="b"><div class="br">${p.brand} · ${p.g.toUpperCase()}</div><div class="nm">${p.name}</div><div class="pr">€<em>${p.price}</em>${cost>0?` <span style="color:var(--t3);font-size:10px">cost €${cost}</span>`:''}</div>${cost>0?`<div style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:1px;font-weight:600;margin-top:2px"><span style="color:var(--green)">+€${profit.toFixed(0)}</span> <span style="color:${margCol}">·${marg}%</span></div>`:''}<div class="ac"><button class="btn-mini" onclick="showProductForm('${p.id}')">Edit</button><button class="btn-mini danger" onclick="delProduct('${p.id}')">Del</button></div></div></div>`;
+  }).join('')}</div>`;
+}
+function showProductForm(id){
+  editingP=id?Object.assign({images:[],cost:0},PRODUCTS.find(p=>p.id===id)):{id:'',g:'men',cat:'sneaker',brand:'',name:'',price:0,cost:0,sizes:[],colors:[],tag:'',image:'',images:[]};
+  // Migrate single image to images array if needed
+  if((!editingP.images||!editingP.images.length)&&editingP.image)editingP.images=[editingP.image];
+  if(!editingP.images)editingP.images=[];
+  while(editingP.images.length<5)editingP.images.push('');
+  // Init picker state
+  pickedSizes=Array.isArray(editingP.sizes)?[...editingP.sizes]:[];
+  pickedColors=Array.isArray(editingP.colors)?[...editingP.colors]:[];
+
+  const imgSlot=(i)=>`<div class="imgslot" data-i="${i}">
+    <div class="imgprev" id="pfImgPrev${i}">${editingP.images[i]?`<img src="${editingP.images[i]}"><button type="button" class="imgx" onclick="clearImg(${i})">×</button>`:`<span class="imgph">${i===0?'PRIMARY':'#'+(i+1)}</span>`}</div>
+    <input type="file" accept="image/*" onchange="loadImgSlot(event,${i})" style="font-size:10.5px;padding:5px;border:1px solid var(--border);background:transparent;color:#fff;width:100%">
+    <input id="pfImg${i}" value="${editingP.images[i]||''}" placeholder="...or URL" oninput="updateImgPrev(${i})" style="padding:6px 8px;font-size:11px;width:100%">
+  </div>`;
+
+  document.getElementById('prodFormHost').innerHTML=`<div class="panel">
+    <div class="panel-h"><h3>${id?'Edit':'New'} <em>Piece</em></h3><button class="btn-mini" onclick="closePForm()">Cancel</button></div>
+    <form class="form-grid" style="padding:22px" onsubmit="saveProduct(event);return false;">
+
+      <div class="fld2 full" style="background:linear-gradient(135deg,#1a1a0a,#0a0a0a);border:1px solid var(--acid-soft);border-left:3px solid var(--acid);padding:18px;margin-bottom:6px">
+        <label style="color:var(--acid);font-size:11px;letter-spacing:2.5px">🤖 AI Auto-Fill (Step 1 — Upload Primary Photo Below First)</label>
+        <p style="font-family:'JetBrains Mono';font-size:10.5px;color:var(--t2);letter-spacing:.5px;line-height:1.6;margin:6px 0 10px">Upload <b style="color:#fff">slot #1 photo</b> (scroll down), then click button below. AI will fill name, brand, category, sizes, colours automatically. Tu sirf <b style="color:var(--acid)">cost</b> aur <b style="color:var(--acid)">price</b> daalega.</p>
+        <button type="button" class="aiBtn" id="aiAnalyzeBtn" onclick="analyzeWithAI()">🤖 Analyze Photo with AI →</button>
+        <div id="aiStatus" style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:1px;color:var(--t3);margin-top:8px;display:none"></div>
+      </div>
+
+      <div class="fld2"><label>Name</label><input id="pfName" value="${editingP.name}" required></div>
+      <div class="fld2"><label>Brand / Style line</label><input id="pfBrand" value="${editingP.brand}" required placeholder="e.g. Sneakers, Apparel, Timepieces"></div>
+      <div class="fld2"><label>Category</label><select id="pfCat" onchange="renderSizePicker()">${['sneaker','watch','hoodie','denim','jewel','tee','bag','cap'].map(c=>`<option ${editingP.cat===c?'selected':''} value="${c}">${c}</option>`).join('')}</select></div>
+      <div class="fld2"><label>Gender</label><select id="pfGen"><option value="men" ${editingP.g==='men'?'selected':''}>MEN</option><option value="women" ${editingP.g==='women'?'selected':''}>WOMEN</option></select></div>
+      <div class="fld2"><label>Tag (badge)</label><select id="pfTag"><option value="" ${editingP.tag===''?'selected':''}>None</option><option ${editingP.tag==='NEW'?'selected':''}>NEW</option><option ${editingP.tag==='HOT'?'selected':''}>HOT</option><option ${editingP.tag==='SALE'?'selected':''}>SALE</option></select></div>
+      <div class="fld2"><label>&nbsp;</label></div>
+
+      <div class="fld2 full">
+        <label>Sizes — Click to select multiple <span id="pfSizesCount" style="color:var(--acid);font-weight:700;margin-left:8px"></span></label>
+        <div class="pickerGrid" id="pfSizesGrid"></div>
+        <div class="pickInfo">Click sizes to add/remove. Multiple selection OK.</div>
+      </div>
+
+      <div class="fld2 full">
+        <label>Colours — Click to select <span id="pfColorsCount" style="color:var(--acid);font-weight:700;margin-left:8px"></span></label>
+        <div class="pickerGrid" id="pfColorsGrid"></div>
+        <div class="pickInfo">Click colours to add/remove. Multiple selection OK.</div>
+      </div>
+
+      <div class="full" style="background:#0a0a0a;border:1px solid var(--border);border-left:3px solid var(--acid);padding:18px;margin-top:6px">
+        <div style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--acid);margin-bottom:14px;font-weight:700">💰 Profit Calculator · Admin Only (Customer ko NAHI dikhega)</div>
+        <div class="profitGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;align-items:end">
+          <div class="fld2" style="margin:0"><label>Cost (€) — Kitne ka liya</label><input id="pfCost" type="number" step="0.01" value="${editingP.cost||0}" oninput="updateProfit()" placeholder="0"></div>
+          <div class="fld2" style="margin:0"><label>Sell Price (€) — Kitne ka bechunga</label><input id="pfPrice" type="number" step="0.01" value="${editingP.price}" oninput="updateProfit()" required placeholder="0"></div>
+          <div class="profitBox" style="padding:8px 12px;background:#000;border:1px solid var(--border)"><div style="font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:2px;color:var(--t3);font-weight:600;margin-bottom:4px">PROFIT €</div><div id="pfProfitN" class="v" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:22px;color:var(--green);letter-spacing:-.02em">€0</div></div>
+          <div class="profitBox" style="padding:8px 12px;background:#000;border:1px solid var(--border)"><div style="font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:2px;color:var(--t3);font-weight:600;margin-bottom:4px">MARGIN %</div><div id="pfMargin" class="v" style="font-family:'Bricolage Grotesque';font-weight:800;font-size:22px;color:var(--acid);letter-spacing:-.02em">0%</div></div>
+        </div>
+      </div>
+
+      <div class="fld2 full" style="margin-top:6px">
+        <label>Product Images — Upload 5 (1st = main, used by AI Auto-Fill)</label>
+        <div class="imgGrid5" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:4px" id="pfImgGrid">${[0,1,2,3,4].map(i=>imgSlot(i)).join('')}</div>
+        <p style="font-family:'JetBrains Mono';font-size:10px;color:var(--t3);letter-spacing:.5px;line-height:1.5;margin-top:8px">📁 Har slot me file upload (max 1MB) OR URL paste. <b style="color:var(--acid)">Slot #1 = PRIMARY</b> — product card pe + AI analyzer ke liye.</p>
+      </div>
+
+      <div class="full" style="display:flex;gap:10px;margin-top:6px"><button type="submit" class="btn-prime">${id?'Save Changes':'Create Piece'}</button><button type="button" class="btn-mini" onclick="closePForm()">Cancel</button></div>
+    </form>
+  </div>`;
+  renderSizePicker();renderColorPicker();updateProfit();
+}
+
+function renderSizePicker(forceCat,preselect){
+  const cat=forceCat||document.getElementById('pfCat').value;
+  if(preselect)pickedSizes=preselect.slice();
+  const preset=SIZE_PRESETS[cat]||['One Size'];
+  // Include any custom sizes user already had
+  const all=[...new Set([...preset,...pickedSizes])];
+  const grid=document.getElementById('pfSizesGrid');
+  if(!grid)return;
+  grid.innerHTML=all.map(s=>`<button type="button" class="pickChip ${pickedSizes.includes(s)?'on':''}" onclick="toggleSize('${s.replace(/'/g,"\\'")}')">${s}</button>`).join('');
+  document.getElementById('pfSizesCount').textContent=pickedSizes.length?`(${pickedSizes.length} selected)`:'';
+}
+function toggleSize(s){
+  const i=pickedSizes.indexOf(s);
+  if(i>=0)pickedSizes.splice(i,1);else pickedSizes.push(s);
+  renderSizePicker();
+}
+function renderColorPicker(preselect){
+  if(preselect)pickedColors=preselect.slice();
+  const grid=document.getElementById('pfColorsGrid');
+  if(!grid)return;
+  // Show preset colors + any custom that admin already has
+  const allNames=[...new Set([...COLOR_PRESETS.map(c=>c.name),...pickedColors])];
+  grid.innerHTML=allNames.map(name=>{
+    const found=COLOR_PRESETS.find(c=>c.name===name);
+    const hex=found?found.hex:'#666';
+    const on=pickedColors.includes(name);
+    return `<button type="button" class="colorChip ${on?'on':''}" onclick="toggleColor('${name.replace(/'/g,"\\'")}')"><span class="swatch" style="background:${hex}"></span>${name}${on?' ✓':''}</button>`;
+  }).join('');
+  document.getElementById('pfColorsCount').textContent=pickedColors.length?`(${pickedColors.length} selected)`:'';
+}
+function toggleColor(c){
+  const i=pickedColors.indexOf(c);
+  if(i>=0)pickedColors.splice(i,1);else pickedColors.push(c);
+  renderColorPicker();
+}
+
+function closePForm(){document.getElementById('prodFormHost').innerHTML='';editingP=null;pickedSizes=[];pickedColors=[];}
+
+function loadImgSlot(e,i){
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  if(f.size>1024*1024){toast('Image #'+(i+1)+' >1MB — use smaller or paste URL');return;}
+  const rd=new FileReader();
+  rd.onload=ev=>{
+    document.getElementById('pfImg'+i).value=ev.target.result;
+    updateImgPrev(i);
+  };
+  rd.readAsDataURL(f);
+}
+function updateImgPrev(i){
+  const v=document.getElementById('pfImg'+i).value;
+  const prev=document.getElementById('pfImgPrev'+i);
+  if(v){prev.innerHTML=`<img src="${v}"><button type="button" class="imgx" onclick="clearImg(${i})">×</button>`;}
+  else{prev.innerHTML=`<span class="imgph">${i===0?'PRIMARY':'#'+(i+1)}</span>`;}
+}
+function clearImg(i){document.getElementById('pfImg'+i).value='';updateImgPrev(i);}
+function updateProfit(){
+  const c=parseFloat(document.getElementById('pfCost').value)||0;
+  const p=parseFloat(document.getElementById('pfPrice').value)||0;
+  const profit=p-c;
+  const margin=p>0?(profit/p*100):0;
+  const pn=document.getElementById('pfProfitN');const pm=document.getElementById('pfMargin');
+  if(pn){pn.textContent='€'+profit.toFixed(2);pn.style.color=profit>=0?'var(--green)':'var(--red)';}
+  if(pm){pm.textContent=margin.toFixed(0)+'%';pm.style.color=margin>=30?'var(--acid)':margin>=10?'#ffaa00':'var(--red)';}
+}
+
+/* ============ AI AUTO-FILL FROM IMAGE ============ */
+async function analyzeWithAI(){
+  const img=document.getElementById('pfImg0').value.trim();
+  if(!img){toast('Slot #1 me photo upload kar pehle');return;}
+  if(!img.startsWith('data:image/')){toast('AI ke liye seedha file upload kar (URL nahi)');return;}
+  const btn=document.getElementById('aiAnalyzeBtn');const st=document.getElementById('aiStatus');
+  btn.disabled=true;btn.textContent='🤖 AI analyzing… (10-15 sec)';
+  st.style.display='block';st.textContent='Sending image to AI…';
+  try{
+    const resp=await fetch('/api/analyze-product',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:img})
+    });
+    const txt=await resp.text();
+    let data;
+    try{data=JSON.parse(txt);}catch(e){throw new Error('Server response invalid: '+txt.slice(0,120));}
+    if(!resp.ok||data.error){throw new Error(data.error||'AI failed ('+resp.status+')');}
+    // Fill form
+    if(data.name)document.getElementById('pfName').value=data.name;
+    if(data.brand)document.getElementById('pfBrand').value=data.brand;
+    if(data.cat&&document.getElementById('pfCat').querySelector(`option[value="${data.cat}"]`))document.getElementById('pfCat').value=data.cat;
+    if(data.g)document.getElementById('pfGen').value=data.g;
+    if(data.tag!==undefined)document.getElementById('pfTag').value=data.tag||'';
+    if(Array.isArray(data.sizes)&&data.sizes.length)renderSizePicker(data.cat,data.sizes);
+    else renderSizePicker(data.cat);
+    if(Array.isArray(data.colors)&&data.colors.length)renderColorPicker(data.colors);
+    st.style.color='var(--green)';st.textContent='✅ AI filled the form — review & save. Cost/Price tu daal.';
+    toast('AI auto-fill done ●');
+  }catch(e){
+    st.style.color='var(--red)';
+    if(e.message.includes('API key')||e.message.includes('not configured'))st.textContent='⚠ Setup needed: ANTHROPIC_API_KEY missing in Vercel env vars. Setup guide diya hai — check chat.';
+    else st.textContent='⚠ '+e.message;
+    toast('AI failed — see message');
+  }finally{
+    btn.disabled=false;btn.textContent='🤖 Analyze Photo with AI →';
+  }
+}
+
+async function saveProduct(e){
+  if(e&&e.preventDefault)e.preventDefault();
+  const images=[0,1,2,3,4].map(i=>document.getElementById('pfImg'+i).value.trim()).filter(Boolean);
+  const sizes=pickedSizes.length?pickedSizes:['One Size'];
+  const colors=pickedColors.length?pickedColors:['Black'];
+  const p={
+    id:editingP.id||'p'+Date.now(),
+    name:document.getElementById('pfName').value.trim(),
+    brand:document.getElementById('pfBrand').value.trim(),
+    cat:document.getElementById('pfCat').value,
+    g:document.getElementById('pfGen').value,
+    price:parseFloat(document.getElementById('pfPrice').value)||0,
+    cost:parseFloat(document.getElementById('pfCost').value)||0,
+    tag:document.getElementById('pfTag').value,
+    sizes:sizes,
+    colors:colors,
+    image:images[0]||'',
+    images:images
+  };
+  toast('Saving to live database…');
+  const ok=await SB.saveProduct(p);
+  if(!ok)return;
+  const ex=PRODUCTS.findIndex(x=>x.id===p.id);if(ex>=0)PRODUCTS[ex]=p;else PRODUCTS.push(p);
+  adTab('products');toast(ex>=0?'Saved ● Live to customers':'Added ● Live to customers');
+}
+async function delProduct(id){
+  if(!confirm('Delete this piece? This removes it from the live store immediately.'))return;
+  const ok=await SB.delProduct(id);
+  if(!ok)return;
+  PRODUCTS=PRODUCTS.filter(p=>p.id!==id);
+  adTab('products');toast('Deleted ●');
+}
+
+function renderOrders(){
+  return `<div class="panel"><div class="panel-h"><h3>All <em>Orders</em></h3><div class="ct">${ORDERS.length} total</div></div>
+  <table class="t"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead>
+  <tbody>${ORDERS.map((o,i)=>`<tr><td class="nm">#${o.id}</td><td>${o.name}<div class="mut">${o.phone}</div><div class="mut" style="font-size:10.5px;margin-top:3px">${o.address}</div></td><td>${o.items.length} pcs</td><td><strong>€${o.total}</strong></td><td class="mut">${o.pay}</td><td><select class="statussel" onchange="setStatus(${i},this.value)"><option ${o.status==='Processing'?'selected':''}>Processing</option><option ${o.status==='Shipped'?'selected':''}>Shipped</option><option ${o.status==='Delivered'?'selected':''}>Delivered</option><option ${o.status==='Cancelled'?'selected':''}>Cancelled</option></select></td><td class="mut">${o.date}</td></tr>`).join('')}</tbody></table></div>`;
+}
+async function setStatus(i,v){
+  const ord=ORDERS[i];if(!ord)return;
+  const ok=await SB.setOrderStatus(ord.id,v);
+  if(ok){ORDERS[i].status=v;toast('Status: '+v);}
+}
+
+function renderPromos(){
+  return `<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:20px">
+    <div><div style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--t3);margin-bottom:6px;font-weight:600">${PROMOS.filter(p=>p.active).length} active</div><h2 style="font-family:'Bricolage Grotesque';font-weight:800;font-size:38px;letter-spacing:-.03em;line-height:1">Promo Codes</h2></div>
+    <button class="btn-prime" onclick="addPromo()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Code</button>
+  </div>
+  <div class="panel"><table class="t"><thead><tr><th>Code</th><th>Description</th><th>Discount</th><th>Expiry</th><th>Status</th><th></th></tr></thead>
+  <tbody>${PROMOS.map((p,i)=>`<tr><td class="nm" style="letter-spacing:1px">${p.code}</td><td class="mut">${p.desc}</td><td><strong>${p.off}%</strong></td><td class="mut">${p.expiry}</td><td><span class="statusp" style="color:${p.active?'var(--green)':'var(--t3)'}">${p.active?'Active':'Disabled'}</span></td><td><button class="btn-mini" onclick="togglePromo(${i})">${p.active?'Disable':'Enable'}</button> <button class="btn-mini danger" onclick="delPromo(${i})">Del</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+async function addPromo(){
+  const c=prompt('Promo code (uppercase):');if(!c)return;
+  const o=parseInt(prompt('Discount %:','10'))||10;
+  const d=prompt('Description:','Special discount')||'Discount';
+  const p={code:c.toUpperCase(),off:o,desc:d,expiry:'2026-12-31',active:true};
+  const ok=await SB.addPromo(p);
+  if(!ok)return;
+  PROMOS.unshift(p);adTab('promos');toast('Promo added ● Live');
+}
+async function togglePromo(i){
+  const p=PROMOS[i];const newActive=!p.active;
+  const ok=await SB.updatePromo(p.code,{active:newActive});
+  if(!ok)return;
+  PROMOS[i].active=newActive;adTab('promos');
+}
+async function delPromo(i){
+  if(!confirm('Delete?'))return;
+  const ok=await SB.delPromo(PROMOS[i].code);
+  if(!ok)return;
+  PROMOS.splice(i,1);adTab('promos');toast('Deleted');
+}
+
+function renderCustomers(){return `<div class="panel"><div class="panel-h"><h3>All <em>Customers</em></h3><div class="ct">${CUSTOMERS.length} registered</div></div>
+  <table class="t"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Orders</th></tr></thead>
+  <tbody>${CUSTOMERS.map(c=>`<tr><td class="nm">${c.name}</td><td class="mut">${c.email}</td><td class="mut">${c.phone}</td><td class="mut">${c.joined}</td><td><strong>${c.orders}</strong></td></tr>`).join('')}</tbody></table></div>`;}
+function renderSubs(){return `<div class="panel"><div class="panel-h"><h3>VIP <em>Subscribers</em></h3><div class="ct">${SUBSCRIBERS.length} on the list</div></div>
+  <table class="t"><thead><tr><th>Email</th><th>Joined</th></tr></thead>
+  <tbody>${SUBSCRIBERS.map(s=>`<tr><td class="nm" style="font-family:'Space Grotesk'">${s.email}</td><td class="mut">${s.date}</td></tr>`).join('')}</tbody></table></div>`;}
+
+function renderSettings(){
+  return `<div class="panel"><div class="panel-h"><h3>Store <em>Identity</em></h3><div class="ct">Brand · Contact</div></div>
+  <div style="padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="fld2"><label>Brand Name (header)</label><input id="stBrand" value="${SITE.brand}"></div>
+    <div class="fld2"><label>Tagline</label><input id="stTag" value="${SITE.tagline}"></div>
+    <div class="fld2"><label>WhatsApp (no +, just digits)</label><input id="stWA" value="${SITE.whatsapp}" placeholder="48660902453"></div>
+    <div class="fld2"><label>WhatsApp Display</label><input id="stWAD" value="${SITE.whatsappDisplay}" placeholder="+48 660 902 453"></div>
+    <div class="fld2"><label>Email</label><input id="stEmail" value="${SITE.email}"></div>
+    <div class="fld2"><label>Location</label><input id="stLoc" value="${SITE.location}"></div>
+  </div></div>
+
+  <div class="panel"><div class="panel-h"><h3>Hero <em>Section</em></h3><div class="ct">Main headline</div></div>
+  <div style="padding:24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <div class="fld2"><label>Eyebrow Text</label><input id="stHE" value="${SITE.heroEye}"></div>
+    <div class="fld2"><label>Heading Line 1</label><input id="stH1" value="${SITE.heroH1}"></div>
+    <div class="fld2"><label>Line 2</label><input id="stH2" value="${SITE.heroH2}"></div>
+    <div class="fld2"><label>Line 3 (word "retail" gets strike)</label><input id="stH3" value="${SITE.heroH3}"></div>
+    <div class="fld2"><label>Primary CTA</label><input id="stCta1" value="${SITE.heroCta1}"></div>
+    <div class="fld2"><label>Secondary CTA</label><input id="stCta2" value="${SITE.heroCta2}"></div>
+    <div class="fld2" style="grid-column:1/-1"><label>Subtitle / Lede</label><textarea id="stLede" rows="2">${SITE.heroLede}</textarea></div>
+  </div></div>
+
+  <div class="panel"><div class="panel-h"><h3>Featured <em>Product</em></h3><div class="ct">Big hero card</div></div>
+  <div style="padding:24px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+    <div class="fld2"><label>Brand Line</label><input id="stFB" value="${SITE.featuredBrand}"></div>
+    <div class="fld2"><label>Product Name</label><input id="stFN" value="${SITE.featuredName}"></div>
+    <div class="fld2"><label>Edition Code</label><input id="stFE" value="${SITE.featuredEdition}"></div>
+    <div class="fld2" style="grid-column:1/-1"><label>Link to product (ID)</label><select id="stFID">${PRODUCTS.map(p=>`<option value="${p.id}" ${SITE.featuredId===p.id?'selected':''}>${p.name} (${p.id})</option>`).join('')}</select></div>
+  </div></div>
+
+  <div class="panel"><div class="panel-h"><h3>Trust <em>Pillars</em></h3><div class="ct">4 promise boxes</div></div>
+  <div style="padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="fld2"><label>Pillar 1 Title</label><input id="stTr1T" value="${SITE.tr1Title}"></div>
+    <div class="fld2"><label>Pillar 1 Description</label><textarea id="stTr1D" rows="2">${SITE.tr1Desc}</textarea></div>
+    <div class="fld2"><label>Pillar 2 Title</label><input id="stTr2T" value="${SITE.tr2Title}"></div>
+    <div class="fld2"><label>Pillar 2 Description</label><textarea id="stTr2D" rows="2">${SITE.tr2Desc}</textarea></div>
+    <div class="fld2"><label>Pillar 3 Title</label><input id="stTr3T" value="${SITE.tr3Title}"></div>
+    <div class="fld2"><label>Pillar 3 Description</label><textarea id="stTr3D" rows="2">${SITE.tr3Desc}</textarea></div>
+    <div class="fld2"><label>Pillar 4 Title</label><input id="stTr4T" value="${SITE.tr4Title}"></div>
+    <div class="fld2"><label>Pillar 4 Description</label><textarea id="stTr4D" rows="2">${SITE.tr4Desc}</textarea></div>
+  </div></div>
+
+  <div class="panel"><div class="panel-h"><h3>Quote &amp; <em>VIP</em></h3><div class="ct">Mid + bottom sections</div></div>
+  <div style="padding:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="fld2"><label>Quote Eyebrow</label><input id="stQE" value="${SITE.quoteEye}"></div>
+    <div class="fld2"><label>Quote Text (3 sentences)</label><input id="stQT" value="${SITE.quoteText}"></div>
+    <div class="fld2"><label>VIP Heading</label><input id="stVH" value="${SITE.vipH}"></div>
+    <div class="fld2"><label>VIP Button Label</label><input id="stVB" value="${SITE.vipBtn}"></div>
+    <div class="fld2" style="grid-column:1/-1"><label>VIP Description</label><textarea id="stVP" rows="2">${SITE.vipP}</textarea></div>
+  </div></div>
+
+  <div style="position:sticky;bottom:20px;display:flex;gap:10px;background:#0a0a0a;padding:18px;border:1px solid var(--border);border-left:3px solid var(--acid);box-shadow:0 -10px 30px rgba(0,0,0,.6);z-index:5">
+    <button class="btn-prime" onclick="saveSettings()">💾 Save All Changes</button>
+    <button class="btn-mini" onclick="if(confirm('Reset site content to defaults?')){SITE=Object.assign({},DEFAULT_SITE);SB.saveSite(SITE).then(()=>{adTab('settings');toast('Reset ●');});}">↺ Reset Content</button>
+    <button class="btn-mini" onclick="SB.loadAll().then(()=>{adTab(curTab);toast('Refreshed ●');})">↻ Reload from DB</button>
+  </div>`;
+}
+async function saveSettings(){
+  const f=id=>document.getElementById(id)?document.getElementById(id).value.trim():'';
+  Object.assign(SITE,{
+    brand:f('stBrand'),tagline:f('stTag'),whatsapp:f('stWA'),whatsappDisplay:f('stWAD'),email:f('stEmail'),location:f('stLoc'),
+    heroEye:f('stHE'),heroH1:f('stH1'),heroH2:f('stH2'),heroH3:f('stH3'),heroLede:f('stLede'),heroCta1:f('stCta1'),heroCta2:f('stCta2'),
+    featuredBrand:f('stFB'),featuredName:f('stFN'),featuredEdition:f('stFE'),featuredId:f('stFID'),
+    quoteEye:f('stQE'),quoteText:f('stQT'),vipH:f('stVH'),vipP:f('stVP'),vipBtn:f('stVB'),
+    tr1Title:f('stTr1T'),tr1Desc:f('stTr1D'),tr2Title:f('stTr2T'),tr2Desc:f('stTr2D'),
+    tr3Title:f('stTr3T'),tr3Desc:f('stTr3D'),tr4Title:f('stTr4T'),tr4Desc:f('stTr4D')
+  });
+  toast('Saving…');
+  const ok=await SB.saveSite(SITE);
+  if(ok)toast('Saved ● Live on storefront');
+}
+
+function renderHelp(){
+  return `<div class="panel">
+    <div class="panel-h"><h3>Help &amp; <em>Guide</em></h3><div class="ct">How to run your store</div></div>
+    <div style="padding:30px;max-width:880px">
+      <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:28px;letter-spacing:-.025em;margin-bottom:8px">Welcome, bhai 👋</div>
+      <p style="font-family:'Space Grotesk';color:var(--t2);font-size:14px;line-height:1.6;margin-bottom:24px">Yeh admin alag URL pe hai (<b style="color:var(--acid)">/admin.html</b>) — customer ko nahi pata. Tu yahan se poori website edit karta hai.</p>
+
+      <div style="display:grid;gap:18px">
+
+        <div style="padding:20px;border:1px solid var(--border);background:#0a0a0a">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:var(--acid);font-weight:700">N° 01</span><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;letter-spacing:-.02em">Dashboard</div></div>
+          <p style="font-size:13px;color:var(--t2);line-height:1.6">Total revenue, orders, customers, low stock — ek nazar me. Recent 5 orders bhi dikhte hain. Sirf overview hai, edit kuch nahi hota.</p>
+        </div>
+
+        <div style="padding:20px;border:1px solid var(--border);background:#0a0a0a">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:var(--acid);font-weight:700">N° 02</span><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;letter-spacing:-.02em">Products</div></div>
+          <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:10px"><b style="color:#fff">"Add Piece"</b> daba ke naya product add kar. Har product me:</p>
+          <ul style="font-size:13px;color:var(--t2);line-height:1.7;padding-left:18px">
+            <li><b style="color:#fff">Name, Brand</b> — short rakh</li>
+            <li><b style="color:#fff">Category</b> — sneaker/watch/hoodie/etc (icon decide hota hai)</li>
+            <li><b style="color:#fff">Gender</b> — MEN ya WOMEN section me dikhega</li>
+            <li><b style="color:#fff">Price</b> — admin only, customer ko nahi dikhta</li>
+            <li><b style="color:#fff">Tag</b> — NEW/HOT/SALE corner badge</li>
+            <li><b style="color:#fff">Sizes, Colours</b> — comma se separate</li>
+            <li><b style="color:#fff">Image</b> — file upload (max 1MB) ya URL paste</li>
+          </ul>
+        </div>
+
+        <div style="padding:20px;border:1px solid var(--border);background:#0a0a0a">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:var(--acid);font-weight:700">N° 03</span><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;letter-spacing:-.02em">Orders</div></div>
+          <p style="font-size:13px;color:var(--t2);line-height:1.6">Customer "Checkout via DM" karta hai → WhatsApp pe message + entry yahan automatic. Status dropdown se update kar: Processing → Shipped → Delivered.</p>
+        </div>
+
+        <div style="padding:20px;border:1px solid var(--border);background:#0a0a0a">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:var(--acid);font-weight:700">N° 04</span><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;letter-spacing:-.02em">Promos</div></div>
+          <p style="font-size:13px;color:var(--t2);line-height:1.6">Discount codes manage kar. Customer cart me code daalega — WhatsApp message me automatic mention ho jayega.</p>
+        </div>
+
+        <div style="padding:20px;border:1px solid var(--border);background:#0a0a0a;border-left:3px solid var(--acid)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;color:var(--acid);font-weight:700">N° 05</span><div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;letter-spacing:-.02em">Site Settings — MOST IMPORTANT</div></div>
+          <p style="font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:10px">Yahan se <b style="color:var(--acid)">poori website ka content edit hota hai</b> — Brand, WhatsApp, Hero heading, Featured Product, Trust Pillars, Quote, VIP section. <b style="color:#fff">"Save All Changes"</b> dabate hi storefront pe instantly update ho jata hai (storefront refresh kar ke confirm kar).</p>
+        </div>
+
+      </div>
+
+      <div style="margin-top:30px;padding:20px;border:1px solid var(--red);background:rgba(255,42,42,.05);border-left:3px solid var(--red)">
+        <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:18px;color:var(--red);margin-bottom:8px">⚠ Backup karte rehna</div>
+        <p style="font-size:13px;color:var(--t2);line-height:1.6">Abhi data <b style="color:#fff">browser localStorage</b> me save hota hai. Different device/browser pe data alag rahega. <b style="color:var(--acid)">Production:</b> Supabase database connect kar — LAUNCH-GUIDE.md me complete steps hain.</p>
+      </div>
+
+      <div style="margin-top:20px;padding:20px;border:1px solid var(--acid);background:rgba(214,255,0,.05);border-left:3px solid var(--acid)">
+        <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:18px;color:var(--acid);margin-bottom:8px">🚀 Deploy Live</div>
+        <ul style="font-size:13px;color:var(--t2);line-height:1.7;padding-left:18px">
+          <li><b style="color:#fff">index.html</b> + <b style="color:#fff">admin.html</b> — dono ek folder me</li>
+          <li>Vercel pe drag-drop ya GitHub se deploy</li>
+          <li>Customer: <code style="background:#1a1a1a;padding:2px 6px">eu-luxury-hub.vercel.app</code></li>
+          <li>Tu admin pe: <code style="background:#1a1a1a;padding:2px 6px">eu-luxury-hub.vercel.app/admin.html</code></li>
+          <li>Data dono me share hoga (same domain localStorage)</li>
+        </ul>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ============ INIT ============ */
+function init(){
+  // Bulletproof bindings
+  const adForm=document.getElementById('adLoginForm');
+  if(adForm){
+    adForm.addEventListener('submit',function(e){e.preventDefault();adminLogin(e);return false;});
+    const adBtn=adForm.querySelector('button');
+    if(adBtn)adBtn.addEventListener('click',function(e){e.preventDefault();adminLogin(e);});
+    const pwd=document.getElementById('adPwd');
+    if(pwd)pwd.addEventListener('keypress',function(e){if(e.key==='Enter'){e.preventDefault();adminLogin(e);}});
+    const otp=document.getElementById('adOtp');
+    if(otp)otp.addEventListener('keypress',function(e){if(e.key==='Enter'){e.preventDefault();adminLogin(e);}});
+  }
+  // Focus password on load
+  setTimeout(()=>{const p=document.getElementById('adPwd');if(p)p.focus();},200);
+}
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
