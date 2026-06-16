@@ -1147,24 +1147,19 @@ function renderTrending(){
 /* ============ WHATSAPP / QV ============ */
 function askPrice(id,sz,co){const p=PRODUCTS.find(x=>x.id===id);let m=`Hi ${CFG.store}! Interested in: ${p.name} (${p.brand}).`;if(sz&&sz!=='One Size')m+=` Size: ${sz}.`;if(co)m+=` Colour: ${co}.`;m+=` Price + delivery to Poland please? 🙏`;oWA(m);}
 function openQV(id){
-  const p=PRODUCTS.find(x=>x.id===id);qvS={id,size:p.sizes.length===1?p.sizes[0]:null,color:(p.colors&&p.colors.length?p.colors[0]:null),imgIdx:0};
+  const p=PRODUCTS.find(x=>x.id===id);qvS={id,size:p.sizes.length===1?p.sizes[0]:null,color:null,imgIdx:0};
   const svgM=ICONS[p.cat].match(/<svg[^>]*viewBox="([^"]+)"[^>]*>(.*)<\/svg>/s);
   // Build images array (prefer p.images, fallback to p.image)
   const imgs=(p.images&&p.images.length?p.images.filter(Boolean):(p.image?[p.image]:[]));
   qvS.imgs=imgs;
   const mainImg=imgs[0]||'';
   const thumbStrip=imgs.length>1?`<div class="qv-thumbs" id="qvThumbs">${imgs.map((im,i)=>`<button class="qv-thumb ${i===0?'on':''}" onclick="qvSwitchImg(${i})"><img src="${im}" alt=""></button>`).join('')}</div>`:'';
-  const colHtml=(p.colors&&p.colors.length)?(p.colors.length===1
-    ?`<div class="opt"><label>Colour <span class="v">${p.colors[0]}</span></label><div class="single-sw"><span class="d" style="background:${COL[p.colors[0]]||'#888'}"></span>${p.colors[0]}</div></div>`
-    :`<div class="opt"><label>Colour <span class="v" id="qvCV">${qvS.color||'Select'}</span></label><div class="chips" id="qvColors">${p.colors.map(c=>`<button class="chip sw ${qvS.color===c?'on':''}" onclick="pickColor(this,'${c}')"><span class="d" style="background:${COL[c]||'#888'}"></span>${c}</button>`).join('')}</div></div>`
-  ):'';
   document.getElementById('qvM').innerHTML=`
     <button class="x-modal" onclick="closeQV()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <div class="mi-info">
       <div class="br">${p.brand}</div><h3>${p.name}</h3>
       <div class="mi-pq"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.1A8.4 8.4 0 1 1 21 11.5Z"/></svg> <span>Members price — <b>DM on WhatsApp</b></span></div>
       <div class="opt"><label>Size <span class="v" id="qvSV">${qvS.size||'Select'}</span></label><div class="chips" id="qvSizes">${p.sizes.map(s=>`<button class="chip ${qvS.size===s?'on':''}" onclick="pickSize(this,'${s}')">${s}</button>`).join('')}</div></div>
-      ${colHtml}
       <div class="mi-acts">
         <button class="btn-wa" onclick="askPrice(qvS.id,qvS.size,qvS.color)"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.1A8.4 8.4 0 1 1 21 11.5Z"/></svg><span>DM for Price</span></button>
         <button class="cta-d" onclick="addFromQV()" style="justify-content:center"><span>Add to Drop</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
@@ -1186,7 +1181,7 @@ function qvSwitchImg(i){
 function closeQV(){document.getElementById('qvW').classList.remove('show');if(!cartOpen&&!chkOpen)document.body.classList.remove('locked');}
 function pickSize(el,s){el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');qvS.size=s;document.getElementById('qvSV').textContent=s;}
 function pickColor(el,c){el.parentElement.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));el.classList.add('on');qvS.color=c;document.getElementById('qvCV').textContent=c;}
-function addFromQV(){const p=PRODUCTS.find(x=>x.id===qvS.id);if(p.sizes.length>1&&!qvS.size){toast('Pick a size first ●');return;}if(p.colors&&p.colors.length>1&&!qvS.color){toast('Pick a colour first ●');return;}addToCart(qvS.id,qvS.size||p.sizes[0],qvS.color||(p.colors&&p.colors[0])||'—');closeQV();openCart();}
+function addFromQV(){const p=PRODUCTS.find(x=>x.id===qvS.id);if(p.sizes.length>1&&!qvS.size){toast('Pick a size first ●');return;}addToCart(qvS.id,qvS.size||p.sizes[0],qvS.color||'');closeQV();openCart();}
 
 /* ============ CART ============ */
 function cK(i,s,c){return `${i}|${s}|${c}`;}
@@ -1198,7 +1193,7 @@ function updateCart(){
   const n=totalQty();const cc=document.getElementById('cartN');cc.textContent=n;cc.classList.toggle('on',n>0);
   const b=document.getElementById('cartBody');
   if(!cart.length){b.innerHTML=`<div class="cart-empty"><svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><h4>Empty.</h4><p>Browse the drop above.</p></div>`;document.getElementById('cartSummary').innerHTML=`<b>0</b> items · Final price on WhatsApp`;return;}
-  b.innerHTML=cart.map((it,i)=>{const p=PRODUCTS.find(x=>x.id===it.id);return `<div class="cit"><div class="cit-th"><div class="e">N°${String(i+1).padStart(2,'0')}</div>${aR(p)}</div><div class="cit-info"><div class="br">${p.brand}</div><div class="nm">${p.name}</div><div class="vr">${it.size!=='One Size'?'Size '+it.size+' · ':''}${it.color}</div><div class="pq">Price on WhatsApp</div><div class="cit-ctrl"><div class="qty"><button onclick="changeQty('${it.key}',-1)">−</button><span>${it.qty}</span><button onclick="changeQty('${it.key}',1)">+</button></div><button class="cit-rm" onclick="removeItem('${it.key}')">Remove</button></div></div></div>`;}).join('');
+  b.innerHTML=cart.map((it,i)=>{const p=PRODUCTS.find(x=>x.id===it.id);return `<div class="cit"><div class="cit-th"><div class="e">N°${String(i+1).padStart(2,'0')}</div>${aR(p)}</div><div class="cit-info"><div class="br">${p.brand}</div><div class="nm">${p.name}</div><div class="vr">${[it.size&&it.size!=='One Size'?'Size '+it.size:'',it.color].filter(Boolean).join(' · ')||'One Size'}</div><div class="pq">Price on WhatsApp</div><div class="cit-ctrl"><div class="qty"><button onclick="changeQty('${it.key}',-1)">−</button><span>${it.qty}</span><button onclick="changeQty('${it.key}',1)">+</button></div><button class="cit-rm" onclick="removeItem('${it.key}')">Remove</button></div></div></div>`;}).join('');
   document.getElementById('cartSummary').innerHTML=`<b>${n}</b> ${n===1?'item':'items'} · Final total on WhatsApp`;bindHover();
 }
 function openCart(){document.getElementById('drawer').classList.add('open');document.getElementById('scrim').classList.add('show');document.body.classList.add('locked');cartOpen=true;bindHover();}
@@ -1213,7 +1208,7 @@ function placeOrder(e){
   e.preventDefault();const n=document.getElementById('coName').value.trim();const ph=document.getElementById('coPhone').value.trim();const ad=document.getElementById('coAddr').value.trim();
   const oid='ELH-'+Math.random().toString(36).slice(2,8).toUpperCase();
   let m=`🛍️ *NEW ORDER — ${CFG.store}*\nOrder: #${oid}\n\n*Customer:* ${n}\n*Phone:* ${ph}\n*Address:* ${ad}\n*Payment:* ${pm}\n\n*Items:*\n`;let tot=0;
-  cart.forEach((it,i)=>{const p=PRODUCTS.find(x=>x.id===it.id);m+=`${i+1}. ${p.name} — ${it.size!=='One Size'?'Size '+it.size+', ':''}${it.color} ×${it.qty}\n`;tot+=(p.price||0)*it.qty;});
+  cart.forEach((it,i)=>{const p=PRODUCTS.find(x=>x.id===it.id);const det=[it.size&&it.size!=='One Size'?'Size '+it.size:'',it.color].filter(Boolean).join(', ');m+=`${i+1}. ${p.name}${det?' — '+det:''} ×${it.qty}\n`;tot+=(p.price||0)*it.qty;});
   m+=`\nPlease confirm total. Thanks ●`;
   const order={id:oid,name:n,phone:ph,address:ad,items:cart.map(it=>({p:it.id,s:it.size,c:it.color,q:it.qty})),pay:pm,status:'Processing',date:new Date().toISOString().slice(0,10),total:tot};
   ORDERS.unshift(order);DB.w('orders',ORDERS);
