@@ -923,7 +923,7 @@ const SB={
     }catch(e){console.error('Supabase:',e);return false;}
   },
   async addOrder(o){if(!sb)return;try{await sb.from('orders').insert(o);}catch(e){console.warn(e);}},
-  async addSub(email){if(!sb)return;try{await sb.from('subscribers').insert({email});}catch(e){console.warn(e);}}
+  async addSub(email){if(!sb||!email)return;try{await sb.from('subscribers').upsert({email,joined:new Date().toISOString().slice(0,10)},{onConflict:'email'});}catch(e){console.warn(e);}}
 };
 
 const DEFAULT_SITE={
