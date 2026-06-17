@@ -452,35 +452,31 @@ function toast(m){const t=document.createElement('div');t.className='toast';t.in
 
 /* ============ LOGIN ============ */
 const ADMIN_PWD='euluxury2025';
-let adStep='pwd',adOTP='',curTab='dashboard';
+let curTab='dashboard';
+// Enter the admin console (loads live data + shows the shell). Used by login AND auto-login.
+async function enterAdmin(){
+  const m=document.getElementById('adlMsg');if(m)m.innerHTML='Connecting to live database…';
+  const ok=await SB.loadAll();
+  document.getElementById('adLogin').style.display='none';
+  document.getElementById('adShell').style.display='grid';
+  adTab(curTab);
+  toast(ok?'Welcome admin · LIVE ●':'Welcome (offline mode)');
+}
 async function adminLogin(e){
   if(e&&e.preventDefault)e.preventDefault();
-  if(adStep==='pwd'){
-    const v=(document.getElementById('adPwd').value||'').trim();
-    if(v===ADMIN_PWD){
-      adStep='otp';adOTP=Math.floor(1000+Math.random()*9000).toString();
-      document.getElementById('otpShown').textContent=adOTP;
-      document.getElementById('adOtpStep').style.display='block';
-      document.getElementById('adPwdFld').style.display='none';
-      document.getElementById('adLoginBtn').textContent='Enter Admin →';
-      document.getElementById('adlMsg').innerHTML='OTP auto-filled below. Just click "Enter Admin".';
-      document.getElementById('adOtp').value=adOTP;
-      setTimeout(()=>{const o=document.getElementById('adOtp');if(o)o.focus();},100);
-    }else{toast('Wrong password');}
-  }else{
-    if((document.getElementById('adOtp').value||'').trim()===adOTP){
-      // Show loading + fetch live data from Supabase
-      document.getElementById('adlMsg').innerHTML='Connecting to live database…';
-      const ok=await SB.loadAll();
-      document.getElementById('adLogin').style.display='none';
-      document.getElementById('adShell').style.display='grid';
-      adTab(curTab);
-      toast(ok?'Welcome admin · LIVE ●':'Welcome (offline mode)');
-    }else{toast('Wrong OTP: '+adOTP);}
-  }
+  const v=(document.getElementById('adPwd').value||'').trim();
+  if(v===ADMIN_PWD){
+    try{localStorage.setItem('elh_admin_ok','1');}catch(_){}  // remember on THIS device only
+    await enterAdmin();
+  }else{toast('Wrong password');}
   return false;
 }
-function adminLogout(){adStep='pwd';adOTP='';document.getElementById('adPwd').value='';if(document.getElementById('adOtp'))document.getElementById('adOtp').value='';document.getElementById('adOtpStep').style.display='none';document.getElementById('adPwdFld').style.display='block';document.getElementById('adLogin').style.display='flex';document.getElementById('adShell').style.display='none';document.getElementById('adLoginBtn').textContent='Verify Password';}
+function adminLogout(){
+  try{localStorage.removeItem('elh_admin_ok');}catch(_){}     // forget → password required again
+  const p=document.getElementById('adPwd');if(p)p.value='';
+  document.getElementById('adLogin').style.display='flex';
+  document.getElementById('adShell').style.display='none';
+}
 
 /* ============ TABS ============ */
 function adTab(t){
@@ -951,6 +947,8 @@ function init(){
   }
   // Focus password on load
   setTimeout(()=>{const p=document.getElementById('adPwd');if(p)p.focus();},200);
+  // Auto-login: if this device already logged in before, skip the password screen
+  try{if(localStorage.getItem('elh_admin_ok')==='1'){enterAdmin();}}catch(_){}
 }
 window.addEventListener('load',init);
 </script>
