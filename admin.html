@@ -226,13 +226,9 @@ table.t .mut{color:var(--t3);font-size:11.5px;font-family:'JetBrains Mono';lette
   <div class="adl-card">
     <div class="adl-eye"><span>Restricted · Admin Console</span></div>
     <h2>Atelier <em>Admin.</em></h2>
-    <p id="adlMsg">Enter the admin password. Default: <b>euluxury2025</b></p>
+    <p id="adlMsg">Enter your admin password to continue.</p>
     <form id="adLoginForm" onsubmit="adminLogin(event);return false;">
       <div class="fld" id="adPwdFld"><label>Password</label><input type="password" id="adPwd" placeholder="••••••••" autocomplete="current-password"></div>
-      <div id="adOtpStep" style="display:none">
-        <div class="adl-otp" onclick="document.getElementById('adOtp').value=document.getElementById('otpShown').textContent;document.getElementById('adOtp').focus();" title="Click to auto-fill"><div class="l">OTP — Tap to fill ↓</div><div class="c" id="otpShown">— — — —</div></div>
-        <div class="fld"><label>Enter OTP</label><input type="text" id="adOtp" placeholder="4-digit" autocomplete="one-time-code"></div>
-      </div>
       <button type="button" class="btn-acid" onclick="adminLogin(event)"><span id="adLoginBtn">Verify Password</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </form>
     <a href="/" class="adl-back">← Back to store</a>
