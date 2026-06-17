@@ -229,7 +229,9 @@ table.t .mut{color:var(--t3);font-size:11.5px;font-family:'JetBrains Mono';lette
     <p id="adlMsg">Enter your admin password to continue.</p>
     <form id="adLoginForm" onsubmit="adminLogin(event);return false;">
       <div class="fld" id="adPwdFld"><label>Password</label><input type="password" id="adPwd" placeholder="••••••••" autocomplete="current-password"></div>
+      <div class="fld" id="adOtpFld" style="display:none"><label>Email Code</label><input type="text" inputmode="numeric" id="adOtp" placeholder="6-digit code from email" autocomplete="one-time-code" maxlength="6"></div>
       <button type="button" class="btn-acid" onclick="adminLogin(event)"><span id="adLoginBtn">Verify Password</span><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <a href="#" id="adOtpBack" style="display:none;margin-top:14px;font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--t3)" onclick="resetLogin();return false;">← Use password again</a>
     </form>
     <a href="/" class="adl-back">← Back to store</a>
   </div>
@@ -446,9 +448,11 @@ let PROMOS=DB.r('promos',null)||[
 /* ============ TOAST ============ */
 function toast(m){const t=document.createElement('div');t.className='toast';t.innerHTML=`<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>${m}</span>`;document.getElementById('toasts').appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),360);},2800);}
 
-/* ============ LOGIN ============ */
-const ADMIN_PWD='euluxury2025';
+/* ============ LOGIN (password → email OTP via /api/admin-otp) ============ */
+const ADMIN_PWD='euluxury2025';   // instant check + safe fallback; the emailed code is the real lock
 let curTab='dashboard';
+let loginStep='pwd', otpToken='';
+
 // Enter the admin console (loads live data + shows the shell). Used by login AND auto-login.
 async function enterAdmin(){
   const m=document.getElementById('adlMsg');if(m)m.innerHTML='Connecting to live database…';
@@ -458,18 +462,65 @@ async function enterAdmin(){
   adTab(curTab);
   toast(ok?'Welcome admin · LIVE ●':'Welcome (offline mode)');
 }
+function finishLogin(){
+  try{localStorage.setItem('elh_admin_ok','1');}catch(_){}   // remember THIS device
+  resetLogin();
+  enterAdmin();
+}
+function resetLogin(){
+  loginStep='pwd';otpToken='';
+  const pf=document.getElementById('adPwdFld'),of=document.getElementById('adOtpFld'),bk=document.getElementById('adOtpBack'),bt=document.getElementById('adLoginBtn'),mg=document.getElementById('adlMsg');
+  if(pf)pf.style.display='block';
+  if(of)of.style.display='none';
+  if(bk)bk.style.display='none';
+  if(bt)bt.textContent='Verify Password';
+  if(mg)mg.textContent='Enter your admin password to continue.';
+}
+function showOtpStep(){
+  loginStep='otp';
+  const pf=document.getElementById('adPwdFld'),of=document.getElementById('adOtpFld'),bk=document.getElementById('adOtpBack'),bt=document.getElementById('adLoginBtn'),mg=document.getElementById('adlMsg');
+  if(pf)pf.style.display='none';
+  if(of)of.style.display='block';
+  if(bk)bk.style.display='inline-block';
+  if(bt)bt.textContent='Verify Code';
+  if(mg)mg.innerHTML='📧 Code sent to your email. Enter the 6-digit code below.';
+  const o=document.getElementById('adOtp');if(o){o.value='';setTimeout(()=>o.focus(),120);}
+}
+// Single entry point bound to the form/button (keeps existing onclick="adminLogin(event)")
 async function adminLogin(e){
   if(e&&e.preventDefault)e.preventDefault();
+  if(loginStep==='otp'){ verifyOtp(); return false; }
   const v=(document.getElementById('adPwd').value||'').trim();
-  if(v===ADMIN_PWD){
-    try{localStorage.setItem('elh_admin_ok','1');}catch(_){}  // remember on THIS device only
-    await enterAdmin();
-  }else{toast('Wrong password');}
+  if(v!==ADMIN_PWD){ toast('Wrong password'); return false; }
+  const bt=document.getElementById('adLoginBtn'); bt.textContent='Sending code…';
+  let d={};
+  try{
+    const r=await fetch('/api/admin-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'request',password:v})});
+    d=await r.json().catch(()=>({}));
+    if(r.ok&&d.ok&&d.token){ otpToken=d.token; showOtpStep(); toast('Code sent ●'); return false; }
+  }catch(err){ d={error:'network'}; }
+  // Fallbacks — owner is NEVER locked out:
+  if(d.error==='not_configured'){ toast('Email OTP not set up yet — password login'); finishLogin(); }
+  else if(d.error==='wrong_password'){ toast('Wrong password'); bt.textContent='Verify Password'; }
+  else { toast('Email code unavailable — logged in via password'); finishLogin(); }
   return false;
+}
+async function verifyOtp(){
+  const code=(document.getElementById('adOtp').value||'').trim();
+  if(!code){ toast('Enter the emailed code'); return; }
+  const bt=document.getElementById('adLoginBtn'); bt.textContent='Verifying…';
+  try{
+    const r=await fetch('/api/admin-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'verify',token:otpToken,code})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.ok){ finishLogin(); return; }
+    if(d.error==='expired'){ toast('Code expired — start again'); resetLogin(); return; }
+    toast('Wrong code — try again'); bt.textContent='Verify Code';
+  }catch(err){ toast('Network error — try again'); bt.textContent='Verify Code'; }
 }
 function adminLogout(){
   try{localStorage.removeItem('elh_admin_ok');}catch(_){}     // forget → password required again
   const p=document.getElementById('adPwd');if(p)p.value='';
+  resetLogin();
   document.getElementById('adLogin').style.display='flex';
   document.getElementById('adShell').style.display='none';
 }
