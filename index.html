@@ -663,7 +663,7 @@ table.t .mut{color:var(--t3);font-size:11.5px;font-family:'JetBrains Mono';lette
     </div>
     <div class="brand">EU LUXURY HUB<small>Authentic · Europe</small></div>
     <div class="nav-r">
-      <select class="sel cur" id="langSel" onchange="setLang(this.value)" aria-label="Language"><option value="en">EN</option><option value="pl">PL</option><option value="hi">HI</option></select>
+      <select class="sel cur" id="langSel" onchange="setLang(this.value)" aria-label="Language"><option value="en">EN</option><option value="pl">PL</option><option value="de">DE</option><option value="fr">FR</option><option value="es">ES</option><option value="it">IT</option><option value="uk">UA</option><option value="hi">HI</option><option value="ar">AR</option></select>
       <button class="ic-btn" onclick="openCart()" aria-label="Cart"><svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span class="cart-n" id="cartN">0</span></button>
     </div>
   </nav>
@@ -1063,21 +1063,178 @@ let PROMOS=DB.r('promos',null)||[
 ];
 
 /* ============ I18N ============ */
-const I18N={en:{},pl:{
+const LANG_NAMES={en:'English ●',pl:'Polski ●',de:'Deutsch ●',fr:'Français ●',es:'Español ●',it:'Italiano ●',uk:'Українська ●',hi:'हिन्दी ●',ar:'العربية ●'};
+const I18N={en:{},
+pl:{
   nav_men:'Mężczyźni',nav_women:'Kobiety',nav_about:'O nas',nav_vip:'Drops',
   hero_eye:'Na żywo · Sprawdzony Reseller',
-  hero_lede:'Sneakersy, zegarki, bluzy i biżuteria — autentyczne, darmowa wysyłka w UE.',
+  hero_lede:'Sneakersy, zegarki, bluzy i biżuteria — autentyczne, darmowa wysyłka w UE, ceny na WhatsApp.',
   hero_cta1:'Zobacz Drop',hero_cta2:'Cena Członkowska',
   men_kk:'Męskie',men_t:'Kolekcja<br><em>Męska</em>',men_d:'Sprawdzone sneakersy, zegarki, bluzy — co tydzień.',
   w_kk:'Damskie',w_t:'Kolekcja<br><em>Damska</em>',w_d:'Buty, biżuteria, zegarki — wybrane na ten tydzień.',
-  trust_kk:'Obietnica',trust_t:'Czemu<br><em>EU Luxury Hub</em>',trust_d:'Cztery powody dlaczego my.',
-  f1_t:'100% Autentyczne',f1_d:'Każdy produkt sprawdzany. Nie wysyłamy podróbek.',
-  f2_t:'Darmowa Wysyłka UE',f2_d:'Bezpłatna, śledzona dostawa w Europie.',
-  f3_t:'DM po Cenę',f3_d:'Twoja cena — WhatsApp.',
-  f4_t:'Drops Co Tydzień',f4_d:'Świeże sneakersy w każdą środę 12:00 CET.'
+  trust_kk:'Obietnica',trust_t:'Czemu<br><em>EU Luxury Hub</em>',trust_d:'Cztery powody, dlaczego my.',
+  f1_t:'100% Autentyczne',f1_d:'Każdy produkt sprawdzany ręcznie. Nigdy podróbek.',
+  f2_t:'Darmowa Wysyłka UE',f2_d:'Bezpłatna, śledzona dostawa w całej Europie.',
+  f3_t:'Cena na DM',f3_d:'Twoja cena — negocjuj na WhatsApp.',
+  f4_t:'Drops Co Tydzień',f4_d:'Świeże sneakersy w każdą środę 12:00 CET.',
+  vip_eye:'Tylko dla Członków · Na żywo',vip_t:'Drops <em>pierwszy.</em><br>Ceny <em>prywatnie.</em>',
+  vip_d:'Zostaw e-mail — wyślemy nowości w każdą środę i prywatne kody.',
+  vip_b:'Powiadom mnie',vip_p1:'Wczesny dostęp',vip_p2:'Prywatne kody',vip_p3:'Ceny członkowskie',vip_p4:'Bez spamu',
+  foot_about:'Sprawdzony reseller luksusu — autentyczne sneakersy, zegarki i biżuteria.',
+  foot_shop:'Sklep',foot_help:'Dom',foot_contact:'Napisz',foot_pay:'Płatność',
+  cart_t:'Twój Drop',cart_a:'Zastosuj',cart_c:'Zamów przez DM',
+  co_t:'Potwierdź Zamówienie',co_p:'Cena i płatność na WhatsApp.',co_n:'Imię i nazwisko',co_ph:'Telefon (WhatsApp)',co_ad:'Adres dostawy',co_pay:'Metoda płatności',
+  co_note:'⚡ Tu nie pobieramy płatności. Po zamówieniu potwierdzimy kwotę na WhatsApp.',co_place:'Wyślij przez WhatsApp'
+},
+de:{
+  nav_men:'Herren',nav_women:'Damen',nav_about:'Über uns',nav_vip:'Drops',
+  hero_eye:'Live · Verifizierter Reseller',
+  hero_lede:'Sneaker, Uhren, Hoodies & Schmuck — authentisch, kostenloser EU-Versand, Preise per WhatsApp.',
+  hero_cta1:'Zum Drop',hero_cta2:'Member-Preis',
+  men_kk:'Herren',men_t:'Herren<br><em>Kollektion</em>',men_d:'Geprüfte Sneaker, Uhren, Hoodies — wöchentlich.',
+  w_kk:'Damen',w_t:'Damen<br><em>Kollektion</em>',w_d:'Schuhe, Schmuck, Uhren — wöchentlich kuratiert.',
+  trust_kk:'Versprechen',trust_t:'Warum<br><em>EU Luxury Hub</em>',trust_d:'Vier Gründe für uns.',
+  f1_t:'100% Authentisch',f1_d:'Jedes Stück handgeprüft. Niemals Fälschungen.',
+  f2_t:'Gratis EU-Versand',f2_d:'Kostenloser, verfolgbarer Versand in ganz Europa.',
+  f3_t:'Preis per DM',f3_d:'Dein Preis — verhandeln per WhatsApp.',
+  f4_t:'Wöchentliche Drops',f4_d:'Frische Sneaker jeden Mittwoch 12:00 CET.',
+  vip_eye:'Nur für Mitglieder · Live',vip_t:'Drops <em>zuerst.</em><br>Preise <em>privat.</em>',
+  vip_d:'E-Mail eintragen — wir schicken jede Woche Neuheiten und private Codes.',
+  vip_b:'Benachrichtigen',vip_p1:'Früher Zugang',vip_p2:'Private Codes',vip_p3:'Member-Preise',vip_p4:'Kein Spam',
+  foot_about:'Verifizierter Luxus-Reseller — authentische Sneaker, Uhren & Schmuck.',
+  foot_shop:'Shop',foot_help:'Haus',foot_contact:'Schreib uns',foot_pay:'Zahlung',
+  cart_t:'Dein Drop',cart_a:'Anwenden',cart_c:'Per DM bestellen',
+  co_t:'Bestellung bestätigen',co_p:'Endpreis & Zahlung per WhatsApp.',co_n:'Vollständiger Name',co_ph:'Telefon (WhatsApp)',co_ad:'Lieferadresse',co_pay:'Zahlungsart',
+  co_note:'⚡ Hier keine Zahlung. Nach der Bestellung bestätigen wir den Betrag per WhatsApp.',co_place:'Per WhatsApp senden'
+},
+fr:{
+  nav_men:'Homme',nav_women:'Femme',nav_about:'À propos',nav_vip:'Drops',
+  hero_eye:'En direct · Revendeur Vérifié',
+  hero_lede:'Sneakers, montres, hoodies & bijoux — authentiques, livraison UE gratuite, prix sur WhatsApp.',
+  hero_cta1:'Voir le Drop',hero_cta2:'Prix Membre',
+  men_kk:'Homme',men_t:'Collection<br><em>Homme</em>',men_d:'Sneakers, montres, hoodies vérifiés — chaque semaine.',
+  w_kk:'Femme',w_t:'Collection<br><em>Femme</em>',w_d:'Chaussures, bijoux, montres — sélection de la semaine.',
+  trust_kk:'Promesse',trust_t:'Pourquoi<br><em>EU Luxury Hub</em>',trust_d:'Quatre raisons de nous choisir.',
+  f1_t:'100% Authentique',f1_d:'Chaque pièce vérifiée à la main. Jamais de contrefaçon.',
+  f2_t:'Livraison UE Gratuite',f2_d:'Livraison gratuite et suivie partout en Europe.',
+  f3_t:'Prix en DM',f3_d:'Votre prix — négociez sur WhatsApp.',
+  f4_t:'Drops Chaque Semaine',f4_d:'De nouveaux modèles chaque mercredi 12:00 CET.',
+  vip_eye:'Membres · En direct',vip_t:'Les drops <em>d’abord.</em><br>Les prix <em>en privé.</em>',
+  vip_d:'Laissez votre e-mail — nouveautés chaque semaine et codes privés.',
+  vip_b:'Me prévenir',vip_p1:'Accès anticipé',vip_p2:'Codes privés',vip_p3:'Prix membre',vip_p4:'Sans spam',
+  foot_about:'Revendeur de luxe vérifié — sneakers, montres & bijoux authentiques.',
+  foot_shop:'Boutique',foot_help:'Maison',foot_contact:'Écrivez-nous',foot_pay:'Paiement',
+  cart_t:'Votre Drop',cart_a:'Appliquer',cart_c:'Commander en DM',
+  co_t:'Confirmer la commande',co_p:'Prix final & paiement sur WhatsApp.',co_n:'Nom complet',co_ph:'Téléphone (WhatsApp)',co_ad:'Adresse de livraison',co_pay:'Mode de paiement',
+  co_note:'⚡ Aucun paiement ici. Après la commande, on confirme le total sur WhatsApp.',co_place:'Envoyer via WhatsApp'
+},
+es:{
+  nav_men:'Hombre',nav_women:'Mujer',nav_about:'Nosotros',nav_vip:'Drops',
+  hero_eye:'En vivo · Revendedor Verificado',
+  hero_lede:'Sneakers, relojes, hoodies y joyas — auténticos, envío UE gratis, precios por WhatsApp.',
+  hero_cta1:'Ver el Drop',hero_cta2:'Precio Miembro',
+  men_kk:'Hombre',men_t:'Colección<br><em>Hombre</em>',men_d:'Sneakers, relojes, hoodies verificados — cada semana.',
+  w_kk:'Mujer',w_t:'Colección<br><em>Mujer</em>',w_d:'Zapatillas, joyas, relojes — selección semanal.',
+  trust_kk:'Promesa',trust_t:'Por qué<br><em>EU Luxury Hub</em>',trust_d:'Cuatro razones para elegirnos.',
+  f1_t:'100% Auténtico',f1_d:'Cada pieza revisada a mano. Nunca réplicas.',
+  f2_t:'Envío UE Gratis',f2_d:'Envío gratuito y con seguimiento por toda Europa.',
+  f3_t:'Precio por DM',f3_d:'Tu precio — negocia por WhatsApp.',
+  f4_t:'Drops Cada Semana',f4_d:'Nuevos modelos cada miércoles 12:00 CET.',
+  vip_eye:'Solo Miembros · En vivo',vip_t:'Drops <em>primero.</em><br>Precios <em>privados.</em>',
+  vip_d:'Deja tu e-mail — novedades cada semana y códigos privados.',
+  vip_b:'Avísame',vip_p1:'Acceso anticipado',vip_p2:'Códigos privados',vip_p3:'Precio miembro',vip_p4:'Sin spam',
+  foot_about:'Revendedor de lujo verificado — sneakers, relojes y joyas auténticas.',
+  foot_shop:'Tienda',foot_help:'Casa',foot_contact:'Escríbenos',foot_pay:'Pago',
+  cart_t:'Tu Drop',cart_a:'Aplicar',cart_c:'Pedir por DM',
+  co_t:'Confirmar Pedido',co_p:'Precio final y pago por WhatsApp.',co_n:'Nombre completo',co_ph:'Teléfono (WhatsApp)',co_ad:'Dirección de entrega',co_pay:'Método de pago',
+  co_note:'⚡ Aquí no se cobra. Tras el pedido confirmamos el total por WhatsApp.',co_place:'Enviar por WhatsApp'
+},
+it:{
+  nav_men:'Uomo',nav_women:'Donna',nav_about:'Chi siamo',nav_vip:'Drops',
+  hero_eye:'Live · Rivenditore Verificato',
+  hero_lede:'Sneakers, orologi, hoodie e gioielli — autentici, spedizione UE gratis, prezzi su WhatsApp.',
+  hero_cta1:'Vedi il Drop',hero_cta2:'Prezzo Membro',
+  men_kk:'Uomo',men_t:'Collezione<br><em>Uomo</em>',men_d:'Sneakers, orologi, hoodie verificati — ogni settimana.',
+  w_kk:'Donna',w_t:'Collezione<br><em>Donna</em>',w_d:'Scarpe, gioielli, orologi — selezione della settimana.',
+  trust_kk:'Promessa',trust_t:'Perché<br><em>EU Luxury Hub</em>',trust_d:'Quattro motivi per sceglierci.',
+  f1_t:'100% Autentico',f1_d:'Ogni pezzo controllato a mano. Mai falsi.',
+  f2_t:'Spedizione UE Gratis',f2_d:'Spedizione gratuita e tracciata in tutta Europa.',
+  f3_t:'Prezzo in DM',f3_d:'Il tuo prezzo — tratta su WhatsApp.',
+  f4_t:'Drops Ogni Settimana',f4_d:'Nuovi modelli ogni mercoledì 12:00 CET.',
+  vip_eye:'Solo Membri · Live',vip_t:'Drops <em>per primo.</em><br>Prezzi <em>privati.</em>',
+  vip_d:'Lascia la tua e-mail — novità ogni settimana e codici privati.',
+  vip_b:'Avvisami',vip_p1:'Accesso anticipato',vip_p2:'Codici privati',vip_p3:'Prezzo membro',vip_p4:'Niente spam',
+  foot_about:'Rivenditore di lusso verificato — sneakers, orologi e gioielli autentici.',
+  foot_shop:'Negozio',foot_help:'Casa',foot_contact:'Scrivici',foot_pay:'Pagamento',
+  cart_t:'Il Tuo Drop',cart_a:'Applica',cart_c:'Ordina via DM',
+  co_t:'Conferma Ordine',co_p:'Prezzo finale e pagamento su WhatsApp.',co_n:'Nome completo',co_ph:'Telefono (WhatsApp)',co_ad:'Indirizzo di consegna',co_pay:'Metodo di pagamento',
+  co_note:'⚡ Qui nessun pagamento. Dopo l’ordine confermiamo il totale su WhatsApp.',co_place:'Invia su WhatsApp'
+},
+uk:{
+  nav_men:'Чоловікам',nav_women:'Жінкам',nav_about:'Про нас',nav_vip:'Дропи',
+  hero_eye:'Наживо · Перевірений Реселер',
+  hero_lede:'Кросівки, годинники, худі та прикраси — оригінал, безкоштовна доставка по ЄС, ціни у WhatsApp.',
+  hero_cta1:'Дивитись Дроп',hero_cta2:'Ціна для членів',
+  men_kk:'Чоловіче',men_t:'Чоловіча<br><em>Колекція</em>',men_d:'Перевірені кросівки, годинники, худі — щотижня.',
+  w_kk:'Жіноче',w_t:'Жіноча<br><em>Колекція</em>',w_d:'Взуття, прикраси, годинники — добірка тижня.',
+  trust_kk:'Обіцянка',trust_t:'Чому<br><em>EU Luxury Hub</em>',trust_d:'Чотири причини обрати нас.',
+  f1_t:'100% Оригінал',f1_d:'Кожен товар перевірено вручну. Без підробок.',
+  f2_t:'Безкоштовна доставка ЄС',f2_d:'Безкоштовна доставка з трекінгом по Європі.',
+  f3_t:'Ціна в DM',f3_d:'Ваша ціна — домовляйтесь у WhatsApp.',
+  f4_t:'Дропи щотижня',f4_d:'Нові моделі щосереди о 12:00 CET.',
+  vip_eye:'Лише для членів · Наживо',vip_t:'Дропи <em>першими.</em><br>Ціни <em>приватно.</em>',
+  vip_d:'Залиште e-mail — новинки щотижня та приватні коди.',
+  vip_b:'Сповістити',vip_p1:'Ранній доступ',vip_p2:'Приватні коди',vip_p3:'Ціни для членів',vip_p4:'Без спаму',
+  foot_about:'Перевірений реселер люксу — оригінальні кросівки, годинники та прикраси.',
+  foot_shop:'Магазин',foot_help:'Дім',foot_contact:'Напишіть',foot_pay:'Оплата',
+  cart_t:'Ваш Дроп',cart_a:'Застосувати',cart_c:'Замовити в DM',
+  co_t:'Підтвердити замовлення',co_p:'Фінальна ціна й оплата у WhatsApp.',co_n:'Повне імʼя',co_ph:'Телефон (WhatsApp)',co_ad:'Адреса доставки',co_pay:'Спосіб оплати',
+  co_note:'⚡ Тут оплати немає. Після замовлення підтвердимо суму у WhatsApp.',co_place:'Надіслати у WhatsApp'
+},
+hi:{
+  nav_men:'पुरुष',nav_women:'महिला',nav_about:'हमारे बारे में',nav_vip:'ड्रॉप्स',
+  hero_eye:'लाइव · वेरिफाइड रीसेलर',
+  hero_lede:'स्नीकर्स, घड़ियाँ, हुडी और ज्वेलरी — असली, फ्री EU शिपिंग, कीमत WhatsApp पर।',
+  hero_cta1:'ड्रॉप देखें',hero_cta2:'मेंबर कीमत',
+  men_kk:'पुरुष',men_t:'पुरुष<br><em>कलेक्शन</em>',men_d:'वेरिफाइड स्नीकर्स, घड़ियाँ, हुडी — हर हफ्ते।',
+  w_kk:'महिला',w_t:'महिला<br><em>कलेक्शन</em>',w_d:'जूते, ज्वेलरी, घड़ियाँ — इस हफ्ते की चुनिंदा।',
+  trust_kk:'हमारा वादा',trust_t:'क्यों<br><em>EU Luxury Hub</em>',trust_d:'हमें चुनने के चार कारण।',
+  f1_t:'100% असली',f1_d:'हर प्रोडक्ट हाथ से जाँचा जाता है। कभी नकली नहीं।',
+  f2_t:'फ्री EU डिलीवरी',f2_d:'पूरे यूरोप में फ्री, ट्रैक्ड शिपिंग।',
+  f3_t:'कीमत के लिए DM',f3_d:'आपकी कीमत — WhatsApp पर बात करें।',
+  f4_t:'हर हफ्ते नए ड्रॉप्स',f4_d:'हर बुधवार 12:00 CET पर नए मॉडल।',
+  vip_eye:'सिर्फ मेंबर्स · लाइव',vip_t:'ड्रॉप्स <em>पहले।</em><br>कीमतें <em>प्राइवेट।</em>',
+  vip_d:'अपना ई-मेल छोड़ें — हर हफ्ते नई चीज़ें और प्राइवेट कोड।',
+  vip_b:'मुझे बताएं',vip_p1:'अर्ली एक्सेस',vip_p2:'प्राइवेट कोड',vip_p3:'मेंबर कीमत',vip_p4:'कोई स्पैम नहीं',
+  foot_about:'वेरिफाइड लग्ज़री रीसेलर — असली स्नीकर्स, घड़ियाँ और ज्वेलरी।',
+  foot_shop:'शॉप',foot_help:'हाउस',foot_contact:'DM करें',foot_pay:'पेमेंट',
+  cart_t:'आपका ड्रॉप',cart_a:'लागू करें',cart_c:'DM से ऑर्डर करें',
+  co_t:'ऑर्डर कन्फर्म करें',co_p:'फाइनल कीमत और पेमेंट WhatsApp पर।',co_n:'पूरा नाम',co_ph:'फोन (WhatsApp)',co_ad:'डिलीवरी पता',co_pay:'पेमेंट तरीका',
+  co_note:'⚡ यहाँ कोई पेमेंट नहीं। ऑर्डर के बाद हम WhatsApp पर टोटल कन्फर्म करेंगे।',co_place:'WhatsApp से भेजें'
+},
+ar:{
+  nav_men:'رجال',nav_women:'نساء',nav_about:'من نحن',nav_vip:'دروبس',
+  hero_eye:'مباشر · بائع موثوق',
+  hero_lede:'أحذية وساعات وهوديز ومجوهرات — أصلية، شحن مجاني داخل الاتحاد الأوروبي، الأسعار عبر واتساب.',
+  hero_cta1:'شاهد الدروب',hero_cta2:'سعر الأعضاء',
+  men_kk:'رجال',men_t:'تشكيلة<br><em>الرجال</em>',men_d:'أحذية وساعات وهوديز موثوقة — كل أسبوع.',
+  w_kk:'نساء',w_t:'تشكيلة<br><em>النساء</em>',w_d:'أحذية ومجوهرات وساعات — مختارة هذا الأسبوع.',
+  trust_kk:'وعدنا',trust_t:'لماذا<br><em>EU Luxury Hub</em>',trust_d:'أربعة أسباب لاختيارنا.',
+  f1_t:'أصلي 100%',f1_d:'كل قطعة تُفحص يدويًا. لا تقليد أبدًا.',
+  f2_t:'شحن مجاني داخل الاتحاد',f2_d:'شحن مجاني مع تتبع في كل أوروبا.',
+  f3_t:'السعر عبر الرسائل',f3_d:'سعرك — تفاوض عبر واتساب.',
+  f4_t:'دروبس كل أسبوع',f4_d:'موديلات جديدة كل أربعاء 12:00 CET.',
+  vip_eye:'للأعضاء فقط · مباشر',vip_t:'الدروبس <em>أولًا.</em><br>الأسعار <em>بخصوصية.</em>',
+  vip_d:'اترك بريدك — وصل جديد كل أسبوع وأكواد خاصة.',
+  vip_b:'أبلغني',vip_p1:'وصول مبكر',vip_p2:'أكواد خاصة',vip_p3:'سعر الأعضاء',vip_p4:'بدون إزعاج',
+  foot_about:'بائع فاخر موثوق — أحذية وساعات ومجوهرات أصلية.',
+  foot_shop:'المتجر',foot_help:'البيت',foot_contact:'راسلنا',foot_pay:'الدفع',
+  cart_t:'سلتك',cart_a:'تطبيق',cart_c:'اطلب عبر الرسائل',
+  co_t:'تأكيد الطلب',co_p:'السعر النهائي والدفع عبر واتساب.',co_n:'الاسم الكامل',co_ph:'الهاتف (واتساب)',co_ad:'عنوان التوصيل',co_pay:'طريقة الدفع',
+  co_note:'⚡ لا دفع هنا. بعد الطلب نؤكد الإجمالي عبر واتساب.',co_place:'إرسال عبر واتساب'
 }};
 let LANG='en';
-function setLang(l){LANG=l;document.documentElement.lang=l;document.documentElement.dir=(l==='ar')?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(el=>{if(el.dataset.en===undefined)el.dataset.en=el.innerHTML;const t=I18N[l]&&I18N[l][el.dataset.i18n];el.innerHTML=(t!==undefined)?t:el.dataset.en;});if(l==='pl')toast('Polski ●');else if(l!=='en')toast(l.toUpperCase()+' — partial');}
+function setLang(l){LANG=l;document.documentElement.lang=l;document.documentElement.dir=(l==='ar')?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(el=>{if(el.dataset.en===undefined)el.dataset.en=el.innerHTML;const t=I18N[l]&&I18N[l][el.dataset.i18n];el.innerHTML=(t!==undefined)?t:el.dataset.en;});try{localStorage.setItem('elh_lang',l);}catch(e){}const sel=document.getElementById('langSel');if(sel&&sel.value!==l)sel.value=l;toast(LANG_NAMES[l]||l.toUpperCase()+' ●');}
 function setCurrency(c){toast('Currency '+c);}
 
 /* ============ STATE ============ */
@@ -1558,6 +1715,8 @@ async function init(){
   applySite();
   setTimeout(()=>document.getElementById('loader').classList.add('gone'),1200);
   renderGrids();updateCart();initCursor();bindSectionDots();buildActivity();
+  // Restore saved language choice
+  try{const sl=localStorage.getItem('elh_lang');if(sl&&sl!=='en'&&I18N[sl])setLang(sl);}catch(e){}
   updateCountdown();setInterval(updateCountdown,1000);
   if(location.hash==='#admin')showAdmin();
   window.addEventListener('hashchange',()=>{if(location.hash==='#admin')showAdmin();});
