@@ -301,7 +301,11 @@ const SB={
       if(p.data)PRODUCTS=p.data;
       if(o.data)ORDERS=o.data;
       if(s.data&&s.data.value)SITE=Object.assign({},DEFAULT_SITE,s.data.value);
-      if(c.data)CUSTOMERS=c.data;
+      // Customers = real people who ordered (unique by phone). Every order auto-creates a customer here.
+      const cmap={};
+      (o.data||[]).forEach(ord=>{const key=(ord.phone||ord.name||'').trim();if(!key)return;if(!cmap[key])cmap[key]={name:ord.name||'—',phone:ord.phone||'—',email:'—',orders:0,joined:ord.date};cmap[key].orders++;if(ord.date&&(!cmap[key].joined||ord.date<cmap[key].joined))cmap[key].joined=ord.date;});
+      (c.data||[]).forEach(cu=>{const key=(cu.phone||cu.email||'').trim();if(key&&!cmap[key])cmap[key]={name:cu.name||'—',phone:cu.phone||'—',email:cu.email||'—',orders:cu.orders||0,joined:cu.joined};});
+      CUSTOMERS=Object.values(cmap);
       if(pr.data)PROMOS=pr.data.map(r=>({code:r.code,off:r.off,desc:r.descr,expiry:r.expiry,active:r.active}));
       if(sub.data)SUBSCRIBERS=sub.data.map(r=>({email:r.email,date:r.joined}));
       return true;
