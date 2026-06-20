@@ -45,6 +45,7 @@ export default async function handler(req, res) {
 
   // Not set up yet → let the page fall back to password-only login (no lockout).
   if (!RESEND_API_KEY || !ADMIN_PASSWORD) {
+    console.log('[otp] NOT_CONFIGURED — RESEND_API_KEY present=' + (!!RESEND_API_KEY) + ', ADMIN_PASSWORD present=' + (!!ADMIN_PASSWORD));
     return res.status(200).json({ error: 'not_configured' });
   }
   const SECRET = RESEND_API_KEY; // server-only value, reused as the HMAC signing key
@@ -54,7 +55,8 @@ export default async function handler(req, res) {
   // ---- Step 1: password correct → email a fresh code, return a signed token (NOT the code)
   if (action === 'request') {
     const password = (body.password || '').toString();
-    if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'wrong_password' });
+    if (password !== ADMIN_PASSWORD) { console.log('[otp] request — WRONG password'); return res.status(401).json({ error: 'wrong_password' }); }
+    console.log('[otp] request — password OK, sending code to ' + ADMIN_EMAIL);
 
     const code = '' + Math.floor(100000 + Math.random() * 900000); // 6 digits
     const expiry = Date.now() + OTP_TTL_MS;
@@ -79,9 +81,12 @@ export default async function handler(req, res) {
       });
       if (!er.ok) {
         const ed = await er.json().catch(() => ({}));
+        console.log('[otp] RESEND FAILED ' + er.status + ' — ' + JSON.stringify(ed).slice(0,300));
         return res.status(200).json({ error: 'email_failed', detail: (ed && (ed.message || ed.name)) || ('HTTP ' + er.status) });
       }
+      console.log('[otp] RESEND OK — email sent to ' + ADMIN_EMAIL);
     } catch (e) {
+      console.log('[otp] RESEND EXCEPTION — ' + (e.message || String(e)));
       return res.status(200).json({ error: 'email_failed', detail: e.message || String(e) });
     }
 
