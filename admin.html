@@ -449,7 +449,7 @@ let PROMOS=DB.r('promos',null)||[
 function toast(m){const t=document.createElement('div');t.className='toast';t.innerHTML=`<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span>${m}</span>`;document.getElementById('toasts').appendChild(t);setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),360);},2800);}
 
 /* ============ LOGIN (password → email OTP via /api/admin-otp) ============ */
-const ADMIN_PWD='euluxury2025';   // instant check + safe fallback; the emailed code is the real lock
+const ADMIN_PWD='euluxury2025';   // recovery fallback ONLY (used if the email step is down); the server validates the real password (Supabase + master env)
 let curTab='dashboard';
 let loginStep='pwd', otpToken='';
 
@@ -491,7 +491,7 @@ async function adminLogin(e){
   if(e&&e.preventDefault)e.preventDefault();
   if(loginStep==='otp'){ verifyOtp(); return false; }
   const v=(document.getElementById('adPwd').value||'').trim();
-  if(v!==ADMIN_PWD){ toast('Wrong password'); return false; }
+  if(!v){ toast('Enter your password'); return false; }
   const bt=document.getElementById('adLoginBtn'); bt.textContent='Sending code…';
   let d={};
   try{
@@ -499,10 +499,17 @@ async function adminLogin(e){
     d=await r.json().catch(()=>({}));
     if(r.ok&&d.ok&&d.token){ otpToken=d.token; showOtpStep(); toast('Code sent ●'); return false; }
   }catch(err){ d={error:'network'}; }
-  // Fallbacks — owner is NEVER locked out:
-  if(d.error==='not_configured'){ toast('Email OTP not set up yet — password login'); finishLogin(); }
-  else if(d.error==='wrong_password'){ toast('Wrong password'); bt.textContent='Verify Password'; }
-  else { toast('Email code unavailable — logged in via password'); finishLogin(); }
+  // Server says password is wrong → stop.
+  if(d.error==='wrong_password'){ toast('Wrong password'); bt.textContent='Verify Password'; return false; }
+  // Email step couldn't run (env missing / network). Recovery: the master password still works,
+  // so the owner is NEVER locked out.
+  if(d.error==='not_configured'||d.error==='network'){
+    if(v===ADMIN_PWD){ toast('Logged in (recovery — email step down)'); finishLogin(); }
+    else { toast('Login unavailable right now — try again'); bt.textContent='Verify Password'; }
+    return false;
+  }
+  // email_failed: server already confirmed the password was correct, it just couldn't email.
+  toast('Email code unavailable — logged in via password'); finishLogin();
   return false;
 }
 async function verifyOtp(){
@@ -894,6 +901,17 @@ function renderSettings(){
     <div class="fld2" style="grid-column:1/-1"><label>VIP Description</label><textarea id="stVP" rows="2">${SITE.vipP}</textarea></div>
   </div></div>
 
+  <div style="margin:26px 0 6px;padding:22px;border:1px solid var(--border);border-left:3px solid var(--acid);background:#0a0a0a">
+    <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;letter-spacing:-.02em;margin-bottom:4px">🔐 Admin Password</div>
+    <p style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:16px">Yahan se login password change kar. <b style="color:#fff">Email OTP</b> phir bhi chalega (asli lock wahi hai). Tera Vercel wala <b style="color:var(--acid)">master password</b> recovery ke liye hamesha chalega — taaki tu kabhi lock na ho.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:560px">
+      <div class="fld2" style="grid-column:1/-1"><label>Current Password</label><input type="password" id="cpCur" placeholder="abhi wala password" autocomplete="current-password"></div>
+      <div class="fld2"><label>New Password (min 6)</label><input type="password" id="cpNew" placeholder="naya password" autocomplete="new-password"></div>
+      <div class="fld2"><label>Confirm New Password</label><input type="password" id="cpNew2" placeholder="dobara naya" autocomplete="new-password"></div>
+    </div>
+    <button class="btn-prime" style="margin-top:16px" onclick="changeAdminPwd()">🔑 Update Password</button>
+  </div>
+
   <div style="position:sticky;bottom:20px;display:flex;gap:10px;background:#0a0a0a;padding:18px;border:1px solid var(--border);border-left:3px solid var(--acid);box-shadow:0 -10px 30px rgba(0,0,0,.6);z-index:5">
     <button class="btn-prime" onclick="saveSettings()">💾 Save All Changes</button>
     <button class="btn-mini" onclick="if(confirm('Reset site content to defaults?')){SITE=Object.assign({},DEFAULT_SITE);SB.saveSite(SITE).then(()=>{adTab('settings');toast('Reset ●');});}">↺ Reset Content</button>
@@ -913,6 +931,28 @@ async function saveSettings(){
   toast('Saving…');
   const ok=await SB.saveSite(SITE);
   if(ok)toast('Saved ● Live on storefront');
+}
+async function changeAdminPwd(){
+  const cur=(document.getElementById('cpCur').value||'').trim();
+  const n1=(document.getElementById('cpNew').value||'').trim();
+  const n2=(document.getElementById('cpNew2').value||'').trim();
+  if(!cur){ toast('Current password daal'); return; }
+  if(n1.length<6){ toast('Naya password min 6 chars'); return; }
+  if(n1!==n2){ toast('Naya password match nahi karta'); return; }
+  toast('Updating…');
+  try{
+    const r=await fetch('/api/admin-otp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'set_password',current:cur,next:n1})});
+    const d=await r.json().catch(()=>({}));
+    if(r.ok&&d.ok){
+      toast('Password changed ● Use it next login');
+      document.getElementById('cpCur').value='';document.getElementById('cpNew').value='';document.getElementById('cpNew2').value='';
+      return;
+    }
+    if(d.error==='wrong_password'){ toast('Current password galat'); return; }
+    if(d.error==='weak'){ toast('Naya password min 6 chars'); return; }
+    if(d.error==='save_failed'){ toast('Save fail — thodi der baad try kar'); return; }
+    toast('Change fail — try again');
+  }catch(e){ toast('Network error — try again'); }
 }
 
 function renderHelp(){
