@@ -394,9 +394,19 @@ const DEFAULT_SITE={
   tr1Title:'100% Authentic',tr1Desc:"Every piece hand-checked. We don't ship replicas — ever.",
   tr2Title:'Free EU Delivery',tr2Desc:'Free, tracked shipping to your door anywhere in Europe.',
   tr3Title:'DM for Price',tr3Desc:'Your price, your way. Negotiate, bulk-buy, or get a member discount on WhatsApp.',
-  tr4Title:'New Drops Weekly',tr4Desc:'Fresh sneakers, watches & ready-to-wear every Wednesday at 12:00 CET.'
+  tr4Title:'New Drops Weekly',tr4Desc:'Fresh sneakers, watches & ready-to-wear every Wednesday at 12:00 CET.',
+  cats:[]
 };
 let SITE=Object.assign({},DEFAULT_SITE,DB.r('site',{})||{});
+
+/* ============ CATEGORIES (base + owner-added custom, stored in SITE.cats) ============ */
+const BASE_CATS=[{key:'sneaker',label:'Sneaker'},{key:'watch',label:'Watch'},{key:'hoodie',label:'Hoodie'},{key:'denim',label:'Denim'},{key:'jewel',label:'Jewellery'},{key:'tee',label:'Tee'},{key:'bag',label:'Bag'},{key:'cap',label:'Cap'}];
+function allCats(){
+  const extra=(SITE&&Array.isArray(SITE.cats))?SITE.cats:[];
+  const seen={},out=[];
+  [...BASE_CATS,...extra].forEach(c=>{ if(c&&c.key&&!seen[c.key]){ seen[c.key]=1; out.push({key:c.key,label:c.label||c.key}); } });
+  return out;
+}
 
 /* ============ ICONS / DATA ============ */
 const ICONS={
@@ -626,7 +636,7 @@ function showProductForm(id){
 
       <div class="fld2"><label>Name</label><input id="pfName" value="${editingP.name}" required></div>
       <div class="fld2"><label>Brand / Style line</label><input id="pfBrand" value="${editingP.brand}" required placeholder="e.g. Sneakers, Apparel, Timepieces"></div>
-      <div class="fld2"><label>Category</label><select id="pfCat" onchange="renderSizePicker()">${['sneaker','watch','hoodie','denim','jewel','tee','bag','cap'].map(c=>`<option ${editingP.cat===c?'selected':''} value="${c}">${c}</option>`).join('')}</select></div>
+      <div class="fld2"><label>Category</label><select id="pfCat" onchange="renderSizePicker()">${allCats().map(c=>`<option ${editingP.cat===c.key?'selected':''} value="${c.key}">${c.label}</option>`).join('')}</select></div>
       <div class="fld2"><label>Gender</label><select id="pfGen"><option value="men" ${editingP.g==='men'?'selected':''}>MEN</option><option value="women" ${editingP.g==='women'?'selected':''}>WOMEN</option></select></div>
       <div class="fld2"><label>Tag (badge)</label><select id="pfTag"><option value="" ${editingP.tag===''?'selected':''}>None</option><option ${editingP.tag==='NEW'?'selected':''}>NEW</option><option ${editingP.tag==='HOT'?'selected':''}>HOT</option><option ${editingP.tag==='SALE'?'selected':''}>SALE</option></select></div>
       <div class="fld2"><label>&nbsp;</label></div>
@@ -902,6 +912,16 @@ function renderSettings(){
   </div></div>
 
   <div style="margin:26px 0 6px;padding:22px;border:1px solid var(--border);border-left:3px solid var(--acid);background:#0a0a0a">
+    <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;letter-spacing:-.02em;margin-bottom:4px">🏷️ Product Categories</div>
+    <p style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:14px">Default ke alawa apni nayi category add kar (e.g. Perfume, Sunglasses). Product form ke dropdown me aa jayegi. Photo hogi to wahi dikhegi; bina photo ek default icon aata hai.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">${allCats().map(c=>{const base=BASE_CATS.some(b=>b.key===c.key);return `<span style="display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--border-2);background:#000;font-family:'JetBrains Mono';font-size:11px;letter-spacing:1px;color:#fff">${c.label}${base?` <span style="color:var(--t4);font-size:9px">default</span>`:` <button onclick="delCat('${c.key}')" style="color:var(--red);font-size:15px;line-height:1">×</button>`}</span>`;}).join('')}</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;max-width:560px">
+      <div class="fld2" style="flex:1;min-width:200px"><label>New Category Name</label><input id="newCatName" placeholder="e.g. Perfume" onkeypress="if(event.key==='Enter')addCat()"></div>
+      <button class="btn-prime" onclick="addCat()">+ Add Category</button>
+    </div>
+  </div>
+
+  <div style="margin:26px 0 6px;padding:22px;border:1px solid var(--border);border-left:3px solid var(--acid);background:#0a0a0a">
     <div style="font-family:'Bricolage Grotesque';font-weight:800;font-size:20px;letter-spacing:-.02em;margin-bottom:4px">🔐 Admin Password</div>
     <p style="font-size:12.5px;color:var(--t2);line-height:1.6;margin-bottom:16px">Yahan se login password change kar. <b style="color:#fff">Email OTP</b> phir bhi chalega (asli lock wahi hai). Tera Vercel wala <b style="color:var(--acid)">master password</b> recovery ke liye hamesha chalega — taaki tu kabhi lock na ho.</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:560px">
@@ -953,6 +973,28 @@ async function changeAdminPwd(){
     if(d.error==='save_failed'){ toast('Save fail — thodi der baad try kar'); return; }
     toast('Change fail — try again');
   }catch(e){ toast('Network error — try again'); }
+}
+async function addCat(){
+  const inp=document.getElementById('newCatName');const label=(inp.value||'').trim();
+  if(!label){ toast('Category name daal'); return; }
+  const key=label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24);
+  if(!key){ toast('Valid naam daal (a-z)'); return; }
+  if(!Array.isArray(SITE.cats))SITE.cats=[];
+  if(BASE_CATS.some(b=>b.key===key)||SITE.cats.some(c=>c.key===key)){ toast('Already exists'); return; }
+  SITE.cats.push({key,label});
+  toast('Saving…');
+  const ok=await SB.saveSite(SITE);
+  if(ok){ toast('Category added ●'); adTab('settings'); }
+  else { SITE.cats=SITE.cats.filter(c=>c.key!==key); }
+}
+async function delCat(key){
+  if(!Array.isArray(SITE.cats))return;
+  if(!confirm('Remove this category? Products jo isse use kar rahe wo rahenge, par dropdown se hat jayegi.'))return;
+  const bak=SITE.cats.slice();
+  SITE.cats=SITE.cats.filter(c=>c.key!==key);
+  const ok=await SB.saveSite(SITE);
+  if(ok){ toast('Category removed ●'); adTab('settings'); }
+  else { SITE.cats=bak; }
 }
 
 function renderHelp(){
