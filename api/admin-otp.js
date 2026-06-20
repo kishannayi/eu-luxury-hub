@@ -1,32 +1,83 @@
-// EU Luxury Hub — Admin Email OTP (two-factor login)
-// Vercel serverless function. Generates a one-time code on the SERVER, emails it to the
-// owner via Resend, and verifies it. The code is NEVER sent to the browser, so even someone
-// who can read the page source cannot get in without access to the owner's inbox.
+// EU Luxury Hub — Admin Email OTP (two-factor login) + password management
+// Vercel serverless function.
 //
-// SETUP (Vercel → Settings → Environment Variables → add these → Redeploy):
-//   RESEND_API_KEY = your Resend API key (starts with re_...)   free at https://resend.com
-//   ADMIN_PASSWORD = euluxury2025      (keeps the password OUT of the public code)
-//   ADMIN_EMAIL    = kishannayi30@gmail.com   (optional — defaults to this)
+//  • action 'request'      → checks password, emails a 6-digit code, returns a signed token
+//  • action 'verify'       → verifies the emailed code against the token
+//  • action 'set_password' → owner changes the admin password (stored hashed in Supabase)
 //
-// Free Resend note: with no verified domain, Resend sends FROM onboarding@resend.dev and
-// ONLY TO the email you signed up with. So sign up for Resend using ADMIN_EMAIL.
+// The emailed code is NEVER sent to the browser, so reading the page source is not enough
+// to get in — you also need access to the owner's inbox. That email step is the real lock.
 //
-// If RESEND_API_KEY or ADMIN_PASSWORD are missing, this returns {error:"not_configured"}
-// so the login page can safely fall back to password-only (owner is never locked out).
+// PASSWORD SOURCES (a login password is accepted if it matches EITHER):
+//   1. ADMIN_PASSWORD env var  → permanent master / recovery key (set in Vercel, stays private,
+//      so the owner can NEVER be locked out even if the stored password is changed or wiped).
+//   2. The hashed password stored in Supabase (table "site", row key='security'), which the
+//      owner can change any time from the admin panel.
+//
+// ENV VARS (Vercel → Settings → Environment Variables → Production → Redeploy):
+//   RESEND_API_KEY = re_...            (email sending + HMAC signing key)
+//   ADMIN_PASSWORD = euluxury2025      (master/recovery password — keep private)
+//   ADMIN_EMAIL    = kishannayi30@gmail.com   (optional, defaults to this)
 
 import crypto from 'node:crypto';
 
 const OTP_TTL_MS = 10 * 60 * 1000;            // code valid for 10 minutes
 const FROM = 'EU Luxury Hub <onboarding@resend.dev>';
 
+// Supabase (publishable values — safe to keep in code; same key the storefront uses)
+const SUPABASE_URL = 'https://nymycljtgnzjzimpnzeq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_s0GQkAWcCC1R3xQdrB_-2Q_FVf3YSaR';
+
 function hmac(secret, msg) {
   return crypto.createHmac('sha256', secret).update(msg).digest('hex');
+}
+function sha256(salt, pw) {
+  return crypto.createHash('sha256').update(salt + ':' + pw).digest('hex');
 }
 function safeEqual(a, b) {
   const ba = Buffer.from(String(a));
   const bb = Buffer.from(String(b));
   if (ba.length !== bb.length) return false;
   return crypto.timingSafeEqual(ba, bb);
+}
+
+// Read the stored password record {salt, hash} from Supabase (or null if none yet)
+async function getStoredSecurity() {
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/site?key=eq.security&select=value', {
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+    });
+    if (!r.ok) return null;
+    const arr = await r.json().catch(() => []);
+    let v = Array.isArray(arr) && arr[0] ? arr[0].value : null;
+    if (typeof v === 'string') { try { v = JSON.parse(v); } catch (_) { v = null; } }
+    return (v && v.salt && v.hash) ? v : null;
+  } catch (_) { return null; }
+}
+
+// Save the new password record to Supabase (upsert on key)
+async function storeSecurity(rec) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/site', {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal'
+    },
+    body: JSON.stringify([{ key: 'security', value: rec }])
+  });
+  return r.ok;
+}
+
+// A password is valid if it matches the env master OR the stored hashed password
+async function validatePassword(pw, ADMIN_PASSWORD) {
+  pw = (pw || '').toString();
+  if (!pw) return false;
+  if (ADMIN_PASSWORD && safeEqual(pw, ADMIN_PASSWORD)) return true;   // master / recovery
+  const sec = await getStoredSecurity();
+  if (sec) { try { return safeEqual(sha256(sec.salt, pw), sec.hash); } catch (_) { return false; } }
+  return false;
 }
 
 export default async function handler(req, res) {
@@ -42,20 +93,38 @@ export default async function handler(req, res) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'kishannayi30@gmail.com';
+  const action = body.action;
 
-  // Not set up yet → let the page fall back to password-only login (no lockout).
+  // ---- Change the admin password (no email needed). Requires the CURRENT password.
+  if (action === 'set_password') {
+    const current = (body.current || '').toString();
+    const next = (body.next || '').toString();
+    if (!(await validatePassword(current, ADMIN_PASSWORD))) {
+      return res.status(200).json({ error: 'wrong_password' });
+    }
+    if (next.length < 6) return res.status(200).json({ error: 'weak' });
+    const salt = crypto.randomBytes(16).toString('hex');
+    const rec = { salt, hash: sha256(salt, next), updated: Date.now() };
+    const ok = await storeSecurity(rec);
+    if (!ok) { console.log('[otp] set_password — Supabase save FAILED'); return res.status(200).json({ error: 'save_failed' }); }
+    console.log('[otp] set_password — admin password updated OK');
+    return res.status(200).json({ ok: true });
+  }
+
+  // OTP flow (request/verify) needs Resend + a master password configured.
   if (!RESEND_API_KEY || !ADMIN_PASSWORD) {
     console.log('[otp] NOT_CONFIGURED — RESEND_API_KEY present=' + (!!RESEND_API_KEY) + ', ADMIN_PASSWORD present=' + (!!ADMIN_PASSWORD));
     return res.status(200).json({ error: 'not_configured' });
   }
   const SECRET = RESEND_API_KEY; // server-only value, reused as the HMAC signing key
 
-  const action = body.action;
-
   // ---- Step 1: password correct → email a fresh code, return a signed token (NOT the code)
   if (action === 'request') {
     const password = (body.password || '').toString();
-    if (password !== ADMIN_PASSWORD) { console.log('[otp] request — WRONG password'); return res.status(401).json({ error: 'wrong_password' }); }
+    if (!(await validatePassword(password, ADMIN_PASSWORD))) {
+      console.log('[otp] request — WRONG password');
+      return res.status(401).json({ error: 'wrong_password' });
+    }
     console.log('[otp] request — password OK, sending code to ' + ADMIN_EMAIL);
 
     const code = '' + Math.floor(100000 + Math.random() * 900000); // 6 digits
@@ -81,7 +150,7 @@ export default async function handler(req, res) {
       });
       if (!er.ok) {
         const ed = await er.json().catch(() => ({}));
-        console.log('[otp] RESEND FAILED ' + er.status + ' — ' + JSON.stringify(ed).slice(0,300));
+        console.log('[otp] RESEND FAILED ' + er.status + ' — ' + JSON.stringify(ed).slice(0, 300));
         return res.status(200).json({ error: 'email_failed', detail: (ed && (ed.message || ed.name)) || ('HTTP ' + er.status) });
       }
       console.log('[otp] RESEND OK — email sent to ' + ADMIN_EMAIL);
