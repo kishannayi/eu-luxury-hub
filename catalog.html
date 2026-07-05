@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000">
+<title>EU Luxury Hub — The Vault · Catalogue</title>
+<meta name="description" content="The full archive. Every piece, every angle — authenticated luxury, priced privately on WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#000;--paper:#0a0a0a;--paper2:#0e0e0e;--line:#1a1a1a;--line2:#262626;
+  --ink:#fff;--ink2:#c4c4c4;--ink3:#7a7a7a;--ink4:#4a4a4a;
+  --acid:#d6ff00;--acid2:#b8e600;--red:#ff2a2a;--green:#00d97a;
+  --ease:cubic-bezier(.22,.61,.36,1);--ease-out:cubic-bezier(.16,1,.3,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+*::selection{background:var(--acid);color:#000}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'Space Grotesk',sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+img{display:block;max-width:100%}
+input{font-family:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#000}
+::-webkit-scrollbar-thumb{background:var(--line2);border:2px solid #000}
+::-webkit-scrollbar-thumb:hover{background:var(--acid)}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ===== TOP BAR ===== */
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 26px;background:rgba(0,0,0,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:12px;min-width:0}
+.brand .bn{font-family:'Bricolage Grotesque';font-weight:800;font-size:19px;letter-spacing:-.02em;white-space:nowrap}
+.brand .bn em{color:var(--acid);font-style:italic}
+.brand .tag{font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink3);white-space:nowrap}
+.tb-actions{display:flex;align-items:center;gap:10px}
+.tb-link{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink2);padding:9px 13px;border:1px solid var(--line2);transition:.25s;white-space:nowrap;font-weight:500}
+.tb-link:hover{border-color:var(--acid);color:var(--acid)}
+.tb-wa{display:inline-flex;align-items:center;gap:8px;background:var(--acid);color:#000;font-family:'JetBrains Mono';font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:10px 15px;transition:.25s;border:1px solid var(--acid)}
+.tb-wa:hover{background:#fff;border-color:#fff}
+.tb-wa svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* ===== HERO ===== */
+.hero{padding:64px 26px 34px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+.hero .eye{font-family:'JetBrains Mono';font-size:11px;letter-spacing:5px;text-transform:uppercase;color:var(--acid);font-weight:600;display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.hero .eye::before{content:"";width:34px;height:1px;background:var(--acid)}
+.hero h1{font-family:'Bricolage Grotesque';font-weight:800;font-size:clamp(56px,13vw,150px);line-height:.86;letter-spacing:-.05em}
+.hero h1 em{font-style:italic;font-weight:700;color:transparent;-webkit-text-stroke:1.5px var(--ink3)}
+.hero .sub{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-top:26px}
+.hero .lede{font-family:'Space Grotesk';font-size:15px;color:var(--ink2);max-width:520px;line-height:1.65}
+.hero .lede b{color:var(--ink);font-weight:600}
+.hero .count{font-family:'JetBrains Mono';text-align:right;flex:none}
+.hero .count .n{font-family:'Bricolage Grotesque';font-weight:800;font-size:60px;line-height:.9;color:var(--acid);letter-spacing:-.04em}
+.hero .count .l{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ink3);margin-top:6px}
+/* faint contact-sheet grid in hero bg */
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:60px 60px;mask-image:radial-gradient(circle at 80% 0%,#000,transparent 60%)}
+.hero>*{position:relative;z-index:1}
+
+/* ===== TOOLBAR ===== */
+.toolbar{position:sticky;top:57px;z-index:30;background:rgba(0,0,0,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--line2)}
+.seg button{font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:600;padding:9px 14px;color:var(--ink3);transition:.2s;border-right:1px solid var(--line2)}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--acid);color:#000}
+.seg button:not(.on):hover{color:var(--ink)}
+.chips{display:flex;gap:8px;overflow-x:auto;flex:1;min-width:0;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{font-family:'JetBrains Mono';font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:500;padding:9px 13px;color:var(--ink2);border:1px solid var(--line2);white-space:nowrap;transition:.2s;flex:none}
+.chip .c{color:var(--ink4);margin-left:7px}
+.chip.on{border-color:var(--acid);color:var(--acid)}
+.chip.on .c{color:var(--acid2)}
+.chip:not(.on):hover{border-color:var(--ink3);color:var(--ink)}
+.search{display:flex;align-items:center;gap:9px;border:1px solid var(--line2);padding:0 12px;flex:none;transition:.2s}
+.search:focus-within{border-color:var(--acid)}
+.search svg{width:14px;height:14px;stroke:var(--ink3);fill:none;stroke-width:2;flex:none}
+.search input{background:none;border:none;color:var(--ink);font-family:'JetBrains Mono';font-size:11px;letter-spacing:1px;padding:10px 0;width:150px;outline:none}
+.search input::placeholder{color:var(--ink4)}
+
+/* ===== GRID ===== */
+.wrap{padding:26px 26px 90px}
+.meta-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)}
+.meta-row .hair{flex:1;height:1px;background:var(--line);margin:0 6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:16px}
+
+.album{position:relative;background:var(--paper);border:1px solid var(--line);cursor:pointer;overflow:hidden;
+  opacity:0;transform:translateY(14px);animation:up .5s var(--ease-out) forwards}
+@keyframes up{to{opacity:1;transform:none}}
+.album:focus-visible{outline:2px solid var(--acid);outline-offset:2px}
+.album .frame{position:relative;aspect-ratio:4/5;overflow:hidden;background:linear-gradient(150deg,#141414,#0a0a0a)}
+.album .frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:grayscale(.15) contrast(1.02);transition:transform .6s var(--ease),filter .5s}
+.album:hover .frame img{transform:scale(1.06);filter:none}
+.album .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 26%,transparent 52%,rgba(0,0,0,.82) 100%);z-index:1}
+/* corner crop marks — the contact-sheet signature */
+.album .crop{position:absolute;width:13px;height:13px;border:1.5px solid rgba(255,255,255,.55);z-index:2;transition:border-color .3s}
+.album .crop.tl{top:9px;left:9px;border-right:none;border-bottom:none}
+.album .crop.br{bottom:9px;right:9px;border-left:none;border-top:none}
+.album:hover .crop{border-color:var(--acid)}
+.album .idx{position:absolute;top:11px;right:12px;z-index:3;font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:1.5px;color:rgba(255,255,255,.75);font-weight:600}
+.album .cat{position:absolute;top:11px;left:26px;z-index:3;font-family:'JetBrains Mono';font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#000;background:var(--acid);padding:4px 8px;font-weight:700}
+.album .badges{position:absolute;bottom:64px;left:12px;z-index:3;display:flex;gap:6px}
+.album .b{font-family:'JetBrains Mono';font-size:9px;letter-spacing:1.5px;padding:4px 8px;font-weight:700;text-transform:uppercase;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.25);color:#fff;backdrop-filter:blur(4px)}
+.album .b.NEW{background:#fff;color:#000;border-color:#fff}
+.album .b.HOT{background:var(--acid);color:#000;border-color:var(--acid)}
+.album .b.SALE{background:var(--red);color:#fff;border-color:var(--red)}
+.album .cnt{display:inline-flex;align-items:center;gap:5px}
+.album .cnt svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2}
+.album .info{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:14px 14px 15px}
+.album .info .br{font-family:'JetBrains Mono';font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--acid);font-weight:600;margin-bottom:5px}
+.album .info .nm{font-family:'Bricolage Grotesque';font-weight:800;font-size:19px;line-height:1.06;letter-spacing:-.02em}
+.album .view{display:flex;align-items:center;gap:7px;margin-top:9px;font-family:'JetBrains Mono';font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--ink2);opacity:0;transform:translateX(-6px);transition:.3s}
+.album:hover .view{opacity:1;transform:none;color:var(--acid)}
+.album .view svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+/* placeholder (no photos yet) */
+.album.empty .frame{display:flex;align-items:center;justify-content:center}
+.album .ph{text-align:center;padding:20px;z-index:1}
+.album .ph .g{font-family:'Bricolage Grotesque';font-weight:800;font-size:44px;color:var(--line2);letter-spacing:-.03em;line-height:.9}
+.album .ph .t{font-family:'JetBrains Mono';font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink4);margin-top:12px}
+
+/* ===== STATES ===== */
+.state{padding:80px 26px;text-align:center}
+.state .k{font-family:'JetBrains Mono';font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--acid);margin-bottom:14px}
+.state h3{font-family:'Bricolage Grotesque';font-weight:800;font-size:30px;letter-spacing:-.02em;margin-bottom:10px}
+.state p{color:var(--ink3);font-size:14px}
+.spinner{width:34px;height:34px;border:2px solid var(--line2);border-top-color:var(--acid);border-radius:50%;margin:0 auto 20px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== LIGHTBOX (proof viewer) ===== */
+.lb{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.94);backdrop-filter:blur(6px);display:none;grid-template-columns:1fr 360px;opacity:0;transition:opacity .3s}
+.lb.on{display:grid;opacity:1}
+.lb-close{position:absolute;top:18px;right:20px;z-index:10;width:42px;height:42px;border:1px solid var(--line2);background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;transition:.2s}
+.lb-close:hover{border-color:var(--acid);color:var(--acid)}
+.lb-close svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.lb-stage{position:relative;display:flex;flex-direction:column;min-width:0;background:#000}
+.lb-main{flex:1;position:relative;display:flex;align-items:center;justify-content:center;padding:34px 60px;min-height:0}
+.lb-main img{max-width:100%;max-height:100%;object-fit:contain;border:1px solid var(--line)}
+.lb-main .ph{text-align:center}
+.lb-main .ph .g{font-family:'Bricolage Grotesque';font-weight:800;font-size:80px;color:var(--line2)}
+.lb-main .ph .t{font-family:'JetBrains Mono';font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--ink4);margin-top:14px}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border:1px solid var(--line2);background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;transition:.2s;z-index:5}
+.lb-nav:hover{border-color:var(--acid);color:var(--acid)}
+.lb-nav svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.lb-nav.prev{left:14px}.lb-nav.next{right:14px}
+.lb-nav[disabled]{opacity:0;pointer-events:none}
+.lb-counter{position:absolute;top:18px;left:20px;font-family:'JetBrains Mono';font-size:11px;letter-spacing:2px;color:var(--ink2);z-index:5}
+.lb-counter b{color:var(--acid)}
+.lb-film{display:flex;gap:8px;padding:12px 20px;overflow-x:auto;border-top:1px solid var(--line);flex:none;scrollbar-width:thin}
+.lb-film button{flex:none;width:58px;height:58px;border:1px solid var(--line2);overflow:hidden;opacity:.5;transition:.2s;position:relative}
+.lb-film button.on{opacity:1;border-color:var(--acid)}
+.lb-film img{width:100%;height:100%;object-fit:cover}
+/* info panel */
+.lb-info{background:var(--paper);border-left:1px solid var(--line);padding:34px 28px;overflow-y:auto;display:flex;flex-direction:column}
+.lb-info .cat{align-self:flex-start;font-family:'JetBrains Mono';font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#000;background:var(--acid);padding:5px 9px;font-weight:700;margin-bottom:18px}
+.lb-info .br{font-family:'JetBrains Mono';font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--acid);font-weight:600;margin-bottom:8px}
+.lb-info h2{font-family:'Bricolage Grotesque';font-weight:800;font-size:34px;line-height:1;letter-spacing:-.03em;margin-bottom:22px}
+.lb-info .spec{border-top:1px solid var(--line);padding:16px 0}
+.lb-info .spec .k{font-family:'JetBrains Mono';font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.pills{display:flex;flex-wrap:wrap;gap:7px}
+.pill{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.5px;padding:7px 11px;border:1px solid var(--line2);color:var(--ink2)}
+.lb-info .price-note{font-family:'JetBrains Mono';font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin:20px 0 12px;display:flex;align-items:center;gap:8px}
+.lb-info .price-note .d{width:6px;height:6px;background:var(--acid);border-radius:50%}
+.lb-wa{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--acid);color:#000;font-family:'JetBrains Mono';font-weight:700;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;padding:18px;transition:.3s;border:1px solid var(--acid)}
+.lb-wa:hover{background:#fff;border-color:#fff}
+.lb-wa svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* ===== TOASTS ===== */
+#toasts{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:10px;align-items:center}
+.toast{background:#000;border:1px solid var(--acid);padding:12px 20px;font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;gap:10px;animation:tin .35s var(--ease)}
+.toast a{color:var(--acid);border-bottom:1px solid currentColor}
+@keyframes tin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ===== FOOTER ===== */
+.foot{border-top:1px solid var(--line);padding:30px 26px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;font-family:'JetBrains Mono';font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink3)}
+.foot a:hover{color:var(--acid)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .lb{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .lb-info{border-left:none;border-top:1px solid var(--line);max-height:42vh;padding:22px 20px}
+  .lb-info h2{font-size:26px;margin-bottom:16px}
+  .lb-wa{margin-top:18px}
+  .lb-main{padding:24px 50px}
+}
+@media(max-width:640px){
+  .topbar{padding:12px 16px}
+  .brand .tag{display:none}
+  .tb-link{display:none}
+  .hero{padding:40px 16px 26px}
+  .toolbar{top:53px;padding:12px 16px;gap:12px}
+  .search input{width:110px}
+  .wrap{padding:18px 16px 70px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:11px}
+  .album .info .nm{font-size:15px}
+  .album .badges{bottom:56px}
+  .hero .count{text-align:left}
+  .foot{padding:22px 16px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .album{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="bn" id="brandName">EU <em>Luxury.</em></div>
+    <div class="tag">The Vault · Catalogue</div>
+  </div>
+  <div class="tb-actions">
+    <a class="tb-link" href="/">← Store</a>
+    <a class="tb-wa" id="topWa" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.1A8.4 8.4 0 1 1 21 11.5Z"/></svg>DM Us
+    </a>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="eye">Full Archive · Live</div>
+  <h1>THE <em>VAULT</em></h1>
+  <div class="sub">
+    <p class="lede">Every piece, <b>every angle</b>. Browse the full catalogue like a proof sheet — tap any album to see all the shots, then <b>DM for your price</b>. Authenticated. Shipped free across Europe.</p>
+    <div class="count"><div class="n" id="heroCount">—</div><div class="l">Pieces in vault</div></div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="seg" id="genSeg">
+    <button data-g="all" class="on">All</button>
+    <button data-g="men">Men</button>
+    <button data-g="women">Women</button>
+  </div>
+  <div class="chips" id="catChips"></div>
+  <label class="search">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="searchInput" type="text" placeholder="SEARCH" autocomplete="off">
+  </label>
+</div>
+
+<main class="wrap">
+  <div class="meta-row" id="metaRow" style="display:none">
+    <span id="metaLeft">Showing all</span><span class="hair"></span><span id="metaRight">— results</span>
+  </div>
+  <div id="gridHost">
+    <div class="state"><div class="spinner"></div><div class="k">Opening the vault</div><p>Loading live catalogue…</p></div>
+  </div>
+</main>
+
+<footer class="foot">
+  <div>EU Luxury Hub — Authenticated Reseller · Europe</div>
+  <div><a href="/">Back to storefront →</a></div>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb" role="dialog" aria-modal="true">
+  <div class="lb-stage">
+    <div class="lb-counter" id="lbCounter"></div>
+    <button class="lb-close" onclick="closeLB()" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <div class="lb-main" id="lbMain"></div>
+    <div class="lb-film" id="lbFilm"></div>
+  </div>
+  <div class="lb-info" id="lbInfo"></div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+/* ===== SUPABASE (same live backend as the store) ===== */
+const SUPABASE_URL='https://nymycljtgnzjzimpnzeq.supabase.co';
+const SUPABASE_KEY='sb_publishable_s0GQkAWcCC1R3xQdrB_-2Q_FVf3YSaR';
+const sb=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+
+/* ===== STATE ===== */
+let PRODUCTS=[], SITE={brand:'EU LUXURY HUB',whatsapp:'48660902453',cats:[]};
+let fGen='all', fCat='all', fQuery='';
+let lbId=null, lbIdx=0;
+
+const BASE_LABELS={sneaker:'Sneakers',watch:'Watches',hoodie:'Hoodies',denim:'Denim',jewel:'Jewellery',tee:'Tees',bag:'Bags',cap:'Caps'};
+function catLabel(key){
+  if(BASE_LABELS[key])return BASE_LABELS[key];
+  const cc=(SITE.cats||[]).find(c=>c.key===key);
+  if(cc)return cc.label;
+  return key?key.charAt(0).toUpperCase()+key.slice(1):'Other';
+}
+function imgsOf(p){
+  if(Array.isArray(p.images)){const a=p.images.filter(Boolean);if(a.length)return a;}
+  return p.image?[p.image]:[];
+}
+
+/* ===== WHATSAPP (matches storefront) ===== */
+function waLink(msg){return `https://wa.me/${SITE.whatsapp}?text=${encodeURIComponent(msg)}`;}
+function openWA(msg){const u=waLink(msg);const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();toast('Opening WhatsApp →');}
+function askPrice(p){
+  let m=`Hi ${SITE.brand}! Interested in: ${p.name} (${p.brand}).`;
+  if(Array.isArray(p.sizes)&&p.sizes.length&&!(p.sizes.length===1&&p.sizes[0]==='One Size'))m+=` Sizes: ${p.sizes.join(', ')}.`;
+  if(Array.isArray(p.colors)&&p.colors.length)m+=` Colours: ${p.colors.join(', ')}.`;
+  m+=` Price + delivery to Poland please? 🙏`;
+  openWA(m);
+}
+
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.getElementById('toasts').appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='.35s';setTimeout(()=>t.remove(),360);},2600);}
+
+/* ===== LOAD ===== */
+async function load(){
+  if(!sb){showError('No connection','The catalogue needs an internet connection to load. Check your connection and refresh.');return;}
+  try{
+    const [pr,st]=await Promise.all([
+      sb.from('products').select('*').order('id'),
+      sb.from('site').select('*').eq('key','config').maybeSingle()
+    ]);
+    if(st.data&&st.data.value)SITE=Object.assign(SITE,st.data.value);
+    PRODUCTS=(pr.data||[]);
+    applySiteChrome();
+    buildChips();
+    render();
+  }catch(e){
+    console.error(e);
+    showError('Could not load','Something went wrong reaching the catalogue. Refresh to try again.');
+  }
+}
+function applySiteChrome(){
+  const w=(SITE.brand||'EU LUXURY HUB').split(' ');
+  document.getElementById('brandName').innerHTML=`${w[0]||'EU'} <em>${(w[1]||'Luxury')}.</em>`;
+  document.title=(SITE.brand||'EU Luxury Hub')+' — The Vault · Catalogue';
+  const wa=document.getElementById('topWa');
+  wa.href=waLink(`Hi ${SITE.brand}! I'm browsing your catalogue (The Vault) — can you help me with pricing? 🙏`);
+}
+
+/* ===== FILTER HELPERS ===== */
+function genPool(){return fGen==='all'?PRODUCTS:PRODUCTS.filter(p=>p.g===fGen);}
+function filtered(){
+  let list=genPool();
+  if(fCat!=='all')list=list.filter(p=>p.cat===fCat);
+  if(fQuery){const q=fQuery.toLowerCase();list=list.filter(p=>((p.name||'')+' '+(p.brand||'')+' '+catLabel(p.cat)).toLowerCase().includes(q));}
+  return list;
+}
+
+/* ===== CHIPS ===== */
+function buildChips(){
+  const host=document.getElementById('catChips');
+  const pool=genPool();
+  const counts={};
+  pool.forEach(p=>{counts[p.cat]=(counts[p.cat]||0)+1;});
+  const keys=Object.keys(counts).sort((a,b)=>catLabel(a).localeCompare(catLabel(b)));
+  let html=`<button class="chip ${fCat==='all'?'on':''}" data-cat="all">All<span class="c">${pool.length}</span></button>`;
+  html+=keys.map(k=>`<button class="chip ${fCat===k?'on':''}" data-cat="${k}">${catLabel(k)}<span class="c">${counts[k]}</span></button>`).join('');
+  host.innerHTML=html;
+  host.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{fCat=b.dataset.cat;buildChips();render();});
+}
+
+/* ===== RENDER GRID ===== */
+function render(){
+  const host=document.getElementById('gridHost');
+  const list=filtered();
+  const meta=document.getElementById('metaRow');
+  if(!PRODUCTS.length){
+    meta.style.display='none';
+    showError('Vault is being stocked','No pieces are live yet. New drops land every Wednesday — check back soon or DM us.',true);
+    return;
+  }
+  meta.style.display='flex';
+  document.getElementById('metaLeft').textContent=(fGen==='all'?'All collections':fGen.toUpperCase())+(fCat==='all'?'':' · '+catLabel(fCat));
+  document.getElementById('metaRight').textContent=list.length+(list.length===1?' result':' results');
+  if(!list.length){
+    host.innerHTML=`<div class="state"><div class="k">No matches</div><h3>Nothing in this filter</h3><p>Try another category or clear the search.</p></div>`;
+    return;
+  }
+  host.innerHTML=`<div class="grid">${list.map((p,i)=>albumCard(p,i)).join('')}</div>`;
+  host.querySelectorAll('.album').forEach(el=>{
+    el.onclick=()=>openLB(el.dataset.id);
+    el.onkeydown=(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLB(el.dataset.id);}};
+  });
+}
+function albumCard(p,i){
+  const imgs=imgsOf(p);
+  const idx='N°'+String(i+1).padStart(3,'0');
+  const cover=imgs[0];
+  const badges=[];
+  if(p.tag)badges.push(`<span class="b ${p.tag}">${p.tag}</span>`);
+  badges.push(`<span class="b cnt"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 15l5-5 4 4 3-3 6 6"/></svg>${imgs.length||'—'}</span>`);
+  const inner = cover
+    ? `<img src="${cover}" alt="${esc(p.name)}" loading="lazy">`
+    : `<div class="ph"><div class="g">${esc((p.brand||p.name||'EL').slice(0,2)).toUpperCase()}</div><div class="t">No proof yet</div></div>`;
+  return `<article class="album ${cover?'':'empty'}" data-id="${p.id}" tabindex="0" role="button" aria-label="${esc(p.name)} — view album" style="animation-delay:${Math.min(i*35,420)}ms">
+    <div class="frame">
+      ${inner}
+      <div class="grad"></div>
+      <span class="crop tl"></span><span class="crop br"></span>
+      <span class="cat">${esc(catLabel(p.cat))}</span>
+      <span class="idx">${idx}</span>
+      <div class="badges">${badges.join('')}</div>
+      <div class="info">
+        <div class="br">${esc(p.brand||'')}</div>
+        <div class="nm">${esc(p.name||'Untitled')}</div>
+        <div class="view">View album <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </div>
+    </div>
+  </article>`;
+}
+
+/* ===== LIGHTBOX ===== */
+function openLB(id){
+  const p=PRODUCTS.find(x=>x.id===id);if(!p)return;
+  lbId=id;lbIdx=0;
+  paintLB();
+  document.getElementById('lb').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeLB(){document.getElementById('lb').classList.remove('on');document.body.style.overflow='';lbId=null;}
+function lbProduct(){return PRODUCTS.find(x=>x.id===lbId);}
+function lbStep(d){
+  const p=lbProduct();if(!p)return;const imgs=imgsOf(p);if(imgs.length<2)return;
+  lbIdx=(lbIdx+d+imgs.length)%imgs.length;paintLB();
+}
+function lbGo(i){lbIdx=i;paintLB();}
+function paintLB(){
+  const p=lbProduct();if(!p)return;
+  const imgs=imgsOf(p);
+  const main=document.getElementById('lbMain');
+  const multi=imgs.length>1;
+  main.innerHTML=(imgs.length
+      ? `<img src="${imgs[lbIdx]}" alt="${esc(p.name)}">`
+      : `<div class="ph"><div class="g">${esc((p.brand||p.name||'EL').slice(0,2)).toUpperCase()}</div><div class="t">Photos coming soon — DM for pics</div></div>`)
+    + `<button class="lb-nav prev" onclick="lbStep(-1)" ${multi?'':'disabled'} aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>`
+    + `<button class="lb-nav next" onclick="lbStep(1)" ${multi?'':'disabled'} aria-label="Next"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>`;
+  document.getElementById('lbCounter').innerHTML=imgs.length?`<b>${String(lbIdx+1).padStart(2,'0')}</b> / ${String(imgs.length).padStart(2,'0')}`:'';
+  const film=document.getElementById('lbFilm');
+  film.innerHTML=imgs.map((src,i)=>`<button class="${i===lbIdx?'on':''}" onclick="lbGo(${i})"><img src="${src}" alt=""></button>`).join('');
+  film.style.display=multi?'flex':'none';
+  const sizes=(Array.isArray(p.sizes)&&p.sizes.length&&!(p.sizes.length===1&&p.sizes[0]==='One Size'))?p.sizes:null;
+  const colors=(Array.isArray(p.colors)&&p.colors.length)?p.colors:null;
+  document.getElementById('lbInfo').innerHTML=`
+    <span class="cat">${esc(catLabel(p.cat))}${p.g?' · '+p.g.toUpperCase():''}</span>
+    <div class="br">${esc(p.brand||'')}</div>
+    <h2>${esc(p.name||'Untitled')}</h2>
+    ${sizes?`<div class="spec"><div class="k">Sizes available</div><div class="pills">${sizes.map(s=>`<span class="pill">${esc(s)}</span>`).join('')}</div></div>`:''}
+    ${colors?`<div class="spec"><div class="k">Colours</div><div class="pills">${colors.map(c=>`<span class="pill">${esc(c)}</span>`).join('')}</div></div>`:''}
+    <div class="price-note"><span class="d"></span>Price shared privately on WhatsApp</div>
+    <button class="lb-wa" onclick="askPriceById('${p.id}')">
+      <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.1A8.4 8.4 0 1 1 21 11.5Z"/></svg>
+      Get price on WhatsApp
+    </button>`;
+}
+function askPriceById(id){const p=PRODUCTS.find(x=>x.id===id);if(p)askPrice(p);}
+
+/* ===== UTIL / EVENTS ===== */
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function showError(k,msg,invite){
+  document.getElementById('gridHost').innerHTML=`<div class="state"><div class="k">${esc(k)}</div><h3>${invite?'Coming soon':'Try again'}</h3><p>${esc(msg)}</p></div>`;
+}
+document.getElementById('genSeg').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  document.getElementById('genSeg').querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');fGen=b.dataset.g;fCat='all';buildChips();render();
+});
+document.getElementById('searchInput').addEventListener('input',e=>{fQuery=e.target.value.trim();render();});
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('lb').classList.contains('on'))return;
+  if(e.key==='Escape')closeLB();
+  else if(e.key==='ArrowRight')lbStep(1);
+  else if(e.key==='ArrowLeft')lbStep(-1);
+});
+document.getElementById('lb').addEventListener('click',e=>{if(e.target.id==='lb')closeLB();});
+
+load();
+</script>
+</body>
+</html>
